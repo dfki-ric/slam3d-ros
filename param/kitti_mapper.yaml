@@ -1,0 +1,31 @@
+# Mapper params
+scan_resolution: 0.5
+map_resolution: 0.5
+neighbor_radius: 10.0
+max_neighbor_links: 2
+patch_building_range: 4
+map_outlier_radius: 0.2
+map_outlier_neighbors: 0
+min_translation: 0.5
+min_rotation: 0.5
+
+use_odometry: false
+add_odometry_edges: false
+use_odometry_heading: false
+
+robot_name: "Kitti"
+odometry_frame: "odometry"
+robot_frame: "velodyne_laser"
+map_frame: "map"
+laser_frame: "velodyne_laser"
+
+# GICP params
+icp_fine/max_correspondence_distance: 2.0
+icp_fine/max_fitness_score: 50.0
+icp_fine/maximum_iterations: 50
+icp_fine/point_cloud_density: 0.5
+
+icp_coarse/max_correspondence_distance: 0.5
+icp_coarse/max_fitness_score: 25.0
+icp_coarse/maximum_iterations: 50
+icp_coarse/point_cloud_density: 1.0
