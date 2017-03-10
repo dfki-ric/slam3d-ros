@@ -15,27 +15,35 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   std_srvs
   laser_geometry
-  slam3d
 )
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+find_package(SLAM3D REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
 ###################################
 catkin_package(
-  CATKIN_DEPENDS roscpp pcl_ros sensor_msgs geometry_msgs visualization_msgs std_srvs tf message_runtime slam3d
+  CATKIN_DEPENDS roscpp pcl_ros sensor_msgs geometry_msgs visualization_msgs std_srvs tf message_runtime
 )
 
 ###########
 ## Build ##
 ###########
 
-include_directories(${catkin_INCLUDE_DIRS})
+include_directories(${SLAM3D_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
 add_executable(mapper_node src/mapper_node.cpp)
 add_executable(velodyne_publisher src/velodyne_publisher.cpp)
 
-target_link_libraries(mapper_node ${catkin_LIBRARIES})
-target_link_libraries(velodyne_publisher ${catkin_LIBRARIES})
+target_link_libraries(mapper_node
+  ${SLAM3D_LIBRARY}
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(velodyne_publisher
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
