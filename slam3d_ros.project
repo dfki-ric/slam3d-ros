@@ -93,6 +93,7 @@
     <File Name="src/mapper_node.cpp"/>
     <File Name="src/ros_common.hpp"/>
     <File Name="src/velodyne_publisher.cpp"/>
+    <File Name="src/kitti_publisher.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="build">
     <File Name="CMakeLists.txt"/>
