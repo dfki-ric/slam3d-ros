@@ -33,16 +33,18 @@ include_directories(${catkin_INCLUDE_DIRS})
 
 add_executable(mapper_node src/mapper_node.cpp)
 add_executable(velodyne_publisher src/velodyne_publisher.cpp)
+add_executable(kitti_publisher src/kitti_publisher.cpp)
 
 target_link_libraries(mapper_node ${catkin_LIBRARIES})
 target_link_libraries(velodyne_publisher ${catkin_LIBRARIES})
+target_link_libraries(kitti_publisher ${catkin_LIBRARIES})
 
 #############
 ## Install ##
 #############
 
 ## Mark executables and/or libraries for installation
-install(TARGETS mapper_node
+install(TARGETS mapper_node velodyne_publisher kitti_publisher
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
