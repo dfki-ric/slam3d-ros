@@ -1,8 +1,12 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/image_encodings.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/Duration.h>
 #include <tf/transform_listener.h>
+
+#include <opencv2/opencv.hpp>
+#include <cv_bridge/cv_bridge.h>
 
 #include <iostream>
 #include <fstream>
@@ -11,21 +15,42 @@ sensor_msgs::PointCloud2 pcl;
 int32_t num;
 float* data;
 std::string path;
-ros::Publisher pub;
-ros::Subscriber offset_sub;
+ros::Publisher pcl_pub;
+ros::Publisher img_pub;
 
 ros::Time gNextStamp;
 int gNextCloud;
 int gStepWidth;
 std::string gScanFrame;
 
-bool publishNext()
+bool publishNextImage()
+{
+	char name[200];
+	sprintf(name, "%s/image_2/%06d.png", path.c_str(), gNextCloud);
+
+	cv_bridge::CvImage cv_image;
+	cv_image.image = cv::imread(name, CV_LOAD_IMAGE_COLOR);
+	if(!cv_image.image.data)
+	{
+		ROS_WARN("Could not open: %s", name);
+		return false;
+	}
+	cv_image.encoding = "bgr8";
+	sensor_msgs::Image ros_image;
+	cv_image.toImageMsg(ros_image);
+	ros_image.header.seq = gNextCloud;
+	ros_image.header.stamp = gNextStamp;
+	img_pub.publish(ros_image);
+	return true;
+}
+
+bool publishNextPointcloud()
 {
 	ROS_DEBUG("Now publishing cloud %d.", gNextCloud);
 	
 	// Read in the file
 	char name[200];
-	sprintf(name, "%s/%06d.bin", path.c_str(), gNextCloud);
+	sprintf(name, "%s/velodyne/%06d.bin", path.c_str(), gNextCloud);
 	FILE *stream = fopen (name,"rb");
 	if(!stream)
 	{
@@ -46,15 +71,8 @@ bool publishNext()
 	pcl.data.resize(pcl.row_step);
 	memcpy(&pcl.data[0], data, pcl.row_step);
 
-	pub.publish(pcl);
+	pcl_pub.publish(pcl);
 	return true;
-}
-
-void receiveTriggerSignal(const std_msgs::Empty::ConstPtr& signal)
-{
-	gNextStamp = ros::Time::now();
-	publishNext();
-	gNextCloud += gStepWidth;
 }
 
 int main(int argc, char **argv)
@@ -62,7 +80,8 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "velodyne_publisher");
 	ros::NodeHandle n;
 
-	pub = n.advertise<sensor_msgs::PointCloud2>("velodyne_scan", 1);
+	pcl_pub = n.advertise<sensor_msgs::PointCloud2>("velodyne_scan", 1);
+	img_pub = n.advertise<sensor_msgs::Image>("camera_image", 1);
 
 	int rate;
 	n.param("replay_path", path, std::string(""));
@@ -94,7 +113,7 @@ int main(int argc, char **argv)
 	pcl.fields[3].datatype = 7;
 
 	// Wait for someone to connect to our pointclouds
-	while(pub.getNumSubscribers() == 0)
+	while(img_pub.getNumSubscribers() == 0 && pcl_pub.getNumSubscribers() == 0)
 	{
 		sleep(1);
 	}
@@ -105,10 +124,21 @@ int main(int argc, char **argv)
 	// Case 2: Publish with a fixed rate
 	ROS_INFO("Publish with a fixed rate of %d.", rate);
 	ros::Rate publish_rate(rate);
+	bool img_ok = true;
+	bool pcl_ok = true;
 	while(ros::ok())
 	{
 		gNextStamp = ros::Time::now();
-		publishNext();
+
+		if(pcl_ok)
+			pcl_ok = publishNextPointcloud();
+			
+		if(img_ok)
+			img_ok = publishNextImage();
+		
+		if(!img_ok && !pcl_ok)
+			break;
+	
 		gNextCloud += gStepWidth;
 		publish_rate.sleep();
 	}

@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   laser_geometry
   slam3d
+  cv_bridge
 )
 
 ###################################
