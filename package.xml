@@ -1,39 +1,39 @@
 <?xml version="1.0"?>
 <package>
 
-  <name>slam3d_ros</name>
-  <version>0.1.0</version>
-  <description>ROS-wrapper for slam3d library.</description>
-  <maintainer email="sebastian.kasperski@dfki.de">Sebastian Kasperski</maintainer>
+    <name>slam3d_ros</name>
+    <version>1.0.0</version>
+    <description>ROS-wrapper for slam3d library.</description>
+	<author email="sebastian.kasperski@dfki.de">Sebastian Kasperski</author>
+	<maintainer email="sebastian.kasperski@dfki.de">Sebastian Kasperski</maintainer>
 
-  <license>GPLv3</license>
-  <url type="website">http://wiki.ros.org/slam3d</url>
-  <author email="sebastian.kasperski@dfki.de">Sebastian Kasperski</author> -->
+    <license>New BSD</license>
+    <url type="website">http://wiki.ros.org/slam3d</url>
 
-  <buildtool_depend>catkin</buildtool_depend>
+    <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>roscpp</build_depend>
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>tf_conversions</build_depend>
-  <build_depend>visualization_msgs</build_depend>
-  <build_depend>std_srvs</build_depend>
-  <build_depend>message_generation</build_depend>
-  <build_depend>laser_geometry</build_depend>
-  <build_depend>slam3d</build_depend>
-  <build_depend>cv_bridge</build_depend>
+    <build_depend>roscpp</build_depend>
+    <build_depend>pcl_ros</build_depend>
+    <build_depend>sensor_msgs</build_depend>
+    <build_depend>geometry_msgs</build_depend>
+    <build_depend>tf</build_depend>
+    <build_depend>tf_conversions</build_depend>
+    <build_depend>visualization_msgs</build_depend>
+    <build_depend>std_srvs</build_depend>
+    <build_depend>message_generation</build_depend>
+    <build_depend>laser_geometry</build_depend>
+    <build_depend>slam3d</build_depend>
+    <build_depend>cv_bridge</build_depend>
 
-  <run_depend>roscpp</run_depend>
-  <run_depend>pcl_ros</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>visualization_msgs</run_depend>
-  <run_depend>std_srvs</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>message_runtime</run_depend>
-  <run_depend>slam3d</run_depend>
-  <run_depend>cv_bridge</run_depend>
+    <run_depend>roscpp</run_depend>
+    <run_depend>pcl_ros</run_depend>
+    <run_depend>sensor_msgs</run_depend>
+    <run_depend>geometry_msgs</run_depend>
+    <run_depend>visualization_msgs</run_depend>
+    <run_depend>std_srvs</run_depend>
+    <run_depend>tf</run_depend>
+    <run_depend>message_runtime</run_depend>
+    <run_depend>slam3d</run_depend>
+    <run_depend>cv_bridge</run_depend>
 
 </package>
