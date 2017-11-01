@@ -1,9 +1,9 @@
 <launch>
 
 	<!-- Publisher for logged scans -->
-	<param name="replay_path" value="/home/skasperski/Robotics/ros-replays/kitti/00" />
-	<param name="replay_rate" value="1" />
-	<node name="Publisher" pkg="slam3d_ros" type="kitti_publisher" />
+	<param name="replay_path" value="/path/to/scan/diroctory/..." />
+	<param name="replay_rate" value="0" />
+	<node name="Publisher" pkg="slam3d_ros" type="velodyne_publisher" />
 
 	<!-- Mapper -->
 	<rosparam file="$(find slam3d_ros)/param/kitti_mapper.yaml"/>
