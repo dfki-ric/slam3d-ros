@@ -5,8 +5,8 @@
 
 #include <slam3d/Logger.hpp>
 #include <slam3d/Clock.hpp>
-#include <slam3d/Odometry.hpp>
-#include <slam3d/GraphMapper.hpp>
+#include <slam3d/PoseSensor.hpp>
+#include <slam3d/Graph.hpp>
 
 using namespace slam3d;
 
@@ -81,18 +81,38 @@ public:
 	}
 };
 
-class RosTfOdometry : public Odometry
+class RosTfOdometry : public PoseSensor
 {
 public:
-	RosTfOdometry(Logger* logger, ros::NodeHandle& node) : Odometry(logger), mTfListener(node)
+	RosTfOdometry(Graph* g, Solver* s, Logger* l, ros::NodeHandle& node)
+	: PoseSensor("Odometry", g, s, l), mTfListener(node)
 	{
 		node.param("odometry_frame", mOdometryFrame, std::string("odometry"));
 		node.param("robot_frame", mRobotFrame, std::string("robot"));
+		
+		mLastVertex = 0;
+		mLastOdometricPose = Transform::Identity();
 	}
 	
 	~RosTfOdometry(){}
 	
-	Transform getOdometricPose(timeval stamp)
+	void handleNewVertex(IdType vertex)
+	{
+		timeval stamp = mGraph->getVertex(vertex).measurement->getTimestamp();
+		Transform currentPose = getPose(stamp);
+		
+		if(mLastVertex > 0)
+		{
+			Transform tf = mLastOdometricPose.inverse() * currentPose;
+			Covariance<6> cov = Covariance<6>::Identity() * 100;
+			mGraph->addConstraint(mLastVertex, vertex, tf, cov, mName, "odometry");
+			mGraph->setCorrectedPose(vertex, mGraph->getCurrentPose() * tf);
+		}
+		mLastVertex = vertex;
+		mLastOdometricPose = currentPose;
+	}
+	
+	Transform getPose(timeval stamp)
 	{
 		tf::StampedTransform tf_transform;
 		try
@@ -101,46 +121,16 @@ public:
 			mTfListener.lookupTransform(mOdometryFrame, mRobotFrame, fromTimeval(stamp), tf_transform);
 		}catch(tf2::TransformException &e)
 		{
-			ROS_ERROR("TF-Odometry: %s", e.what());
-			throw OdometryException();
+			throw InvalidPose(e.what());
 		}
 		return tf2eigen(tf_transform);
-	}
-	
-	TransformWithCovariance getRelativePose(timeval last, timeval next)
-	{
-		ROS_ERROR("Not implemented!");
-		throw OdometryException();
-/*
-		tf::Stamped<tf::Pose> inPose, outPose;
-		inPose.frame_id_ = mRobotFrame;
-		inPose.stamp_ = fromTimeval(next);
-		inPose.setData(tf::Pose::getIdentity());
-		
-		try
-		{
-			mTfListener.waitForTransform(mRobotFrame, mOdometryFrame, fromTimeval(next), ros::Duration(1.0));
-			mTfListener.transformPose(mRobotFrame, fromTimeval(last), inPose, mOdometryFrame, outPose);
-		}catch(tf2::TransformException &e)
-		{
-			ROS_ERROR("TF-Odometry: %s", e.what());
-			throw OdometryException();
-		}
-		
-		TransformWithCovariance result;
-		result.transform = tf2eigen(outPose);
-		result.covariance = Covariance::Identity(); // Calculate covariance from odometric distance?
-		return result;
-*/
-	}
-	
-	Covariance calculateCovariance(const Transform &tf)
-	{
-		return Covariance::Identity() * 100;
 	}
 	
 private:
 	tf::TransformListener mTfListener;
 	std::string mOdometryFrame;
 	std::string mRobotFrame;
+	
+	Transform mLastOdometricPose;
+	IdType mLastVertex;
 };

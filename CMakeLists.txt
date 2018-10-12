@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
+cmake_policy(VERSION 3.5.1)
 project(slam3d_ros)
-add_definitions(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -18,7 +18,6 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
 )
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(SLAM3D REQUIRED)
 
 ###################################
@@ -32,18 +31,22 @@ catkin_package(
 ## Build ##
 ###########
 
-include_directories(${SLAM3D_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
-
+# Mapper
 add_executable(mapper_node src/mapper_node.cpp)
-add_executable(velodyne_publisher src/velodyne_publisher.cpp)
-add_executable(kitti_publisher src/kitti_publisher.cpp)
-
+target_include_directories(mapper_node PRIVATE ${catkin_INCLUDE_DIRS})
 target_link_libraries(mapper_node
-  ${SLAM3D_LIBRARY}
+  slam3d::slam3d
   ${catkin_LIBRARIES}
 )
 
+# Velodyne Publisher
+add_executable(velodyne_publisher src/velodyne_publisher.cpp)
+target_include_directories(velodyne_publisher PRIVATE ${catkin_INCLUDE_DIRS})
 target_link_libraries(velodyne_publisher ${catkin_LIBRARIES})
+
+# Kitti Publisher
+add_executable(kitti_publisher src/kitti_publisher.cpp)
+target_include_directories(kitti_publisher PRIVATE ${catkin_INCLUDE_DIRS})
 target_link_libraries(kitti_publisher ${catkin_LIBRARIES})
 
 #############

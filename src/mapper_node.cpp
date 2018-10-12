@@ -6,7 +6,7 @@
 #include <std_srvs/Empty.h>
 #include <boost/uuid/uuid_io.hpp>
 
-#include <slam3d/BoostMapper.hpp>
+#include <slam3d/BoostGraph.hpp>
 #include <slam3d/PointCloudSensor.hpp>
 #include <slam3d/G2oSolver.hpp>
 
@@ -25,7 +25,7 @@ ros::Publisher* gPosePublisher;
 ros::Publisher* gEdgePublisher;
 ros::Publisher* gSignalPublisher;
 
-slam3d::BoostMapper* gMapper;
+slam3d::BoostGraph* gGraph;
 slam3d::PointCloudSensor* gPclSensor;
 slam3d::Solver* gSolver;
 
@@ -46,7 +46,7 @@ std::string gLaserFrame;
 
 void publishNodes(const ros::Time& stamp, const std::string& frame)
 {
-	slam3d::VertexObjectList vertices = gMapper->getVertexObjectsFromSensor(gPclSensor->getName());
+	slam3d::VertexObjectList vertices = gGraph->getVerticesFromSensor(gPclSensor->getName());
 
 	visualization_msgs::Marker marker;
 	marker.header.frame_id = frame;
@@ -84,7 +84,7 @@ void publishNodes(const ros::Time& stamp, const std::string& frame)
 
 void publishEdges(const ros::Time& stamp, const std::string& frame)
 {
-	slam3d::EdgeObjectList edges = gMapper->getEdgeObjectsFromSensor(gPclSensor->getName());
+	slam3d::EdgeObjectList edges = gGraph->getEdgesFromSensor(gPclSensor->getName());
 
 	visualization_msgs::Marker marker;
 	marker.header.frame_id = frame;
@@ -112,13 +112,13 @@ void publishEdges(const ros::Time& stamp, const std::string& frame)
 	unsigned i = 0;
 	for(EdgeObjectList::const_iterator edge = edges.begin(); edge != edges.end(); ++edge)
 	{
-		const VertexObject& source_obj = gMapper->getVertex(edge->source);
+		const VertexObject& source_obj = gGraph->getVertex(edge->source);
 		Transform::ConstTranslationPart source_pose = source_obj.corrected_pose.translation();
 		marker.points[2*i].x = source_pose[0];
 		marker.points[2*i].y = source_pose[1];
 		marker.points[2*i].z = source_pose[2];
 
-		const VertexObject& target_obj = gMapper->getVertex(edge->target);
+		const VertexObject& target_obj = gGraph->getVertex(edge->target);
 		Transform::ConstTranslationPart target_pose = target_obj.corrected_pose.translation();
 		marker.points[2*i+1].x = target_pose[0];
 		marker.points[2*i+1].y = target_pose[1];
@@ -159,9 +159,9 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 		cloud = slam3d::PointCloud::Ptr(new slam3d::PointCloud(*pcl));
 	}
 	slam3d::PointCloudMeasurement::Ptr m(new slam3d::PointCloudMeasurement(cloud, gRobotName, gPclSensor->getName(), gPclSensor->getSensorPose()));
-	gMapper->addReading(m);
+	gGraph->addMeasurement(m);
 	
-	slam3d::Transform current = gMapper->getCurrentPose();
+	slam3d::Transform current = gGraph->getCurrentPose();
 	if(current.matrix().determinant() == 0)
 	{
 		ROS_ERROR("Current pose from mapper has 0 determinant!");
@@ -197,14 +197,14 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 bool optimize(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 {
 	gSolver->saveGraph("input_graph.g2o");
-	bool success = gMapper->optimize();
+	bool success = gGraph->optimize();
 	return true;
 }
 
 bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 {
 	// Get the accumulated point cloud
-	PointCloud::Ptr accu = gPclSensor->getAccumulatedCloud(gMapper->getVertexObjectsFromSensor(gPclSensor->getName()));
+	PointCloud::Ptr accu = gPclSensor->getAccumulatedCloud(gGraph->getVerticesFromSensor(gPclSensor->getName()));
 	PointCloud::Ptr cleaned = gPclSensor->removeOutliers(accu, gMapOutlierRadius, gMapOutlierNeighbors);
 	PointCloud::Ptr downsampled = gPclSensor->downsample(cleaned, gMapResolution);
 	downsampled->header.frame_id = gMapFrame;
@@ -214,7 +214,7 @@ bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 
 bool write_graph(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 {
-	gMapper->writeGraphToFile("pose_graph");
+	gGraph->writeGraphToFile("pose_graph");
 	return true;
 }
 
@@ -231,9 +231,9 @@ int main(int argc, char **argv)
 	slam3d::Clock* clock = new RosClock();
 	slam3d::Logger* logger = new RosLogger();
 	
-	gMapper = new slam3d::BoostMapper(logger);
+	gGraph = new slam3d::BoostGraph(logger);
 	gSolver = new slam3d::G2oSolver(logger);
-	gMapper->setSolver(gSolver);
+	gGraph->setSolver(gSolver);
 	
 	n.param("robot_name", gRobotName, std::string("Robot"));
 	n.param("odometry_frame", gOdometryFrame, std::string("odometry"));
@@ -293,7 +293,7 @@ int main(int argc, char **argv)
 	n.param("icp_coarse/transformation_epsilon", gicp_conf.transformation_epsilon, gicp_conf.transformation_epsilon);
 	gPclSensor->setCoarseConfiguaration(gicp_conf);
 
-	gMapper->registerSensor(gPclSensor);
+	gGraph->registerSensor(gPclSensor);
 	
 	double radius, translation, rotation;
 	int links, range;
@@ -309,10 +309,9 @@ int main(int argc, char **argv)
 	n.param("min_rotation", rotation, 0.1);
 	n.param("use_odometry", gUseOdometry, false);
 
-	gMapper->setNeighborRadius(radius, links);
-	gMapper->setMinPoseDistance(translation, rotation);
-	gMapper->setPatchBuildingRange(range);
-
+	gPclSensor->setNeighborRadius(radius, links);
+	gPclSensor->setMinPoseDistance(translation, rotation);
+	gPclSensor->setPatchBuildingRange(range);
 
 	if(gUseOdometry)
 	{
@@ -320,9 +319,8 @@ int main(int argc, char **argv)
 		n.param("add_odometry_edges", add_edges, false);
 		n.param("use_odometry_heading", use_heading, false);
 
-		gOdometry = new RosTfOdometry(logger, n);
-		gMapper->setOdometry(gOdometry, add_edges);		
-		gMapper->useOdometryHeading(use_heading);
+		gOdometry = new RosTfOdometry(gGraph, gSolver, logger, n);
+		gGraph->registerPoseSensor(gOdometry);
 	}else
 	{
 		gOdometry = NULL;
@@ -350,7 +348,7 @@ int main(int argc, char **argv)
 	
 	ros::spin();
 	
-	delete gMapper;
+	delete gGraph;
 	delete gPclSensor;
 	delete gSolver;
 	delete logger;
