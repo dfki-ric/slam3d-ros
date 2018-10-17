@@ -84,8 +84,8 @@ public:
 class RosTfOdometry : public PoseSensor
 {
 public:
-	RosTfOdometry(Graph* g, Solver* s, Logger* l, ros::NodeHandle& node)
-	: PoseSensor("Odometry", g, s, l), mTfListener(node)
+	RosTfOdometry(Graph* g, Logger* l, ros::NodeHandle& node)
+	: PoseSensor("Odometry", g, l), mTfListener(node)
 	{
 		node.param("odometry_frame", mOdometryFrame, std::string("odometry"));
 		node.param("robot_frame", mRobotFrame, std::string("robot"));

@@ -27,7 +27,7 @@ ros::Publisher* gSignalPublisher;
 
 slam3d::BoostGraph* gGraph;
 slam3d::PointCloudSensor* gPclSensor;
-slam3d::Solver* gSolver;
+//slam3d::Solver* gSolver;
 
 RosTfOdometry* gOdometry;
 
@@ -39,6 +39,8 @@ double gMapOutlierRadius;
 int gMapOutlierNeighbors;
 
 std::string gRobotName;
+std::string gSensorName;
+
 std::string gOdometryFrame;
 std::string gRobotFrame;
 std::string gMapFrame;
@@ -158,8 +160,16 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	{	
 		cloud = slam3d::PointCloud::Ptr(new slam3d::PointCloud(*pcl));
 	}
-	slam3d::PointCloudMeasurement::Ptr m(new slam3d::PointCloudMeasurement(cloud, gRobotName, gPclSensor->getName(), gPclSensor->getSensorPose()));
-	gGraph->addMeasurement(m);
+	
+	slam3d::PointCloudMeasurement::Ptr m(
+		new slam3d::PointCloudMeasurement(cloud, gRobotName, gSensorName, gPclSensor->getSensorPose()));
+	if(gUseOdometry)
+	{
+		gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()));
+	}else
+	{
+		gPclSensor->addMeasurement(m);
+	}
 	
 	slam3d::Transform current = gGraph->getCurrentPose();
 	if(current.matrix().determinant() == 0)
@@ -196,8 +206,8 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 
 bool optimize(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 {
-	gSolver->saveGraph("input_graph.g2o");
-	bool success = gGraph->optimize();
+//	gSolver->saveGraph("input_graph.g2o");
+//	bool success = gGraph->optimize();
 	return true;
 }
 
@@ -232,8 +242,8 @@ int main(int argc, char **argv)
 	slam3d::Logger* logger = new RosLogger();
 	
 	gGraph = new slam3d::BoostGraph(logger);
-	gSolver = new slam3d::G2oSolver(logger);
-	gGraph->setSolver(gSolver);
+//	gSolver = new slam3d::G2oSolver(logger);
+//	gGraph->setSolver(gSolver);
 	
 	n.param("robot_name", gRobotName, std::string("Robot"));
 	n.param("odometry_frame", gOdometryFrame, std::string("odometry"));
@@ -247,7 +257,7 @@ int main(int argc, char **argv)
 	gMapFrame = gTransformListener->resolve(gMapFrame);
 	gLaserFrame = gTransformListener->resolve(gLaserFrame);
 	
-	// Get the pose of the laseer scanner
+	// Get the pose of the laser scanner
 	tf::StampedTransform laser_pose;
 	try
 	{
@@ -260,9 +270,8 @@ int main(int argc, char **argv)
 	}
 	
 	// Create the PointCloudSensor for the velodyne laser
-	std::string sensor_name;
-	n.param("sensor_name", sensor_name, std::string("PointCloudSensor"));
-	gPclSensor = new slam3d::PointCloudSensor(sensor_name, logger, tf2eigen(laser_pose));
+	n.param("sensor_name", gSensorName, std::string("PointCloudSensor"));
+	gPclSensor = new slam3d::PointCloudSensor(gSensorName, logger, tf2eigen(laser_pose));
 
 	slam3d::GICPConfiguration gicp_conf;
 	n.param("icp_fine/correspondence_randomness", gicp_conf.correspondence_randomness, gicp_conf.correspondence_randomness);
@@ -319,7 +328,7 @@ int main(int argc, char **argv)
 		n.param("add_odometry_edges", add_edges, false);
 		n.param("use_odometry_heading", use_heading, false);
 
-		gOdometry = new RosTfOdometry(gGraph, gSolver, logger, n);
+		gOdometry = new RosTfOdometry(gGraph, logger, n);
 		gGraph->registerPoseSensor(gOdometry);
 	}else
 	{
@@ -350,7 +359,7 @@ int main(int argc, char **argv)
 	
 	delete gGraph;
 	delete gPclSensor;
-	delete gSolver;
+//	delete gSolver;
 	delete logger;
 	delete clock;
 	delete gTransformBroadcaster;
