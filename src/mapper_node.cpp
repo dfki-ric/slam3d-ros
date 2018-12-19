@@ -6,9 +6,10 @@
 #include <std_srvs/Empty.h>
 #include <boost/uuid/uuid_io.hpp>
 
-#include <slam3d/BoostGraph.hpp>
-#include <slam3d/PointCloudSensor.hpp>
-#include <slam3d/G2oSolver.hpp>
+#include <slam3d/core/Mapper.hpp>
+#include <slam3d/graph/boost/BoostGraph.hpp>
+#include <slam3d/sensor/pcl/PointCloudSensor.hpp>
+#include <slam3d/solver/g2o/G2oSolver.hpp>
 
 #include <iostream>
 
@@ -26,8 +27,9 @@ ros::Publisher* gEdgePublisher;
 ros::Publisher* gSignalPublisher;
 
 slam3d::BoostGraph* gGraph;
+slam3d::Mapper* gMapper;
 slam3d::PointCloudSensor* gPclSensor;
-//slam3d::Solver* gSolver;
+slam3d::G2oSolver* gSolver;
 
 RosTfOdometry* gOdometry;
 
@@ -126,8 +128,12 @@ void publishEdges(const ros::Time& stamp, const std::string& frame)
 		marker.points[2*i+1].y = target_pose[1];
 		marker.points[2*i+1].z = target_pose[2];
 		
+		// Edges from PointcloudSensor should be of SE3 type
+		assert(edge->constraint.getType() == SE3);
+		SE3Constraint::Ptr se3 = boost::dynamic_pointer_cast<SE3Constraint>(edge->constraint);
+		
 		Transform diff_inv = target_obj.corrected_pose.inverse() * source_obj.corrected_pose;
-		Transform error = diff_inv * edge->transform;
+		Transform error = diff_inv * se3->getRelativePose().transform;
 		
 		Transform::TranslationPart trans = error.translation();
 		Eigen::AngleAxisd aa;
@@ -171,7 +177,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 		gPclSensor->addMeasurement(m);
 	}
 	
-	slam3d::Transform current = gGraph->getCurrentPose();
+	slam3d::Transform current = gMapper->getCurrentPose();
 	if(current.matrix().determinant() == 0)
 	{
 		ROS_ERROR("Current pose from mapper has 0 determinant!");
@@ -242,8 +248,9 @@ int main(int argc, char **argv)
 	slam3d::Logger* logger = new RosLogger();
 	
 	gGraph = new slam3d::BoostGraph(logger);
-//	gSolver = new slam3d::G2oSolver(logger);
-//	gGraph->setSolver(gSolver);
+	gMapper = new slam3d::Mapper(gGraph, logger);
+	gSolver = new slam3d::G2oSolver(logger);
+	gGraph->setSolver(gSolver);
 	
 	n.param("robot_name", gRobotName, std::string("Robot"));
 	n.param("odometry_frame", gOdometryFrame, std::string("odometry"));
@@ -302,7 +309,7 @@ int main(int argc, char **argv)
 	n.param("icp_coarse/transformation_epsilon", gicp_conf.transformation_epsilon, gicp_conf.transformation_epsilon);
 	gPclSensor->setCoarseConfiguaration(gicp_conf);
 
-	gGraph->registerSensor(gPclSensor);
+	gMapper->registerSensor(gPclSensor);
 	
 	double radius, translation, rotation;
 	int links, range;
@@ -329,7 +336,7 @@ int main(int argc, char **argv)
 		n.param("use_odometry_heading", use_heading, false);
 
 		gOdometry = new RosTfOdometry(gGraph, logger, n);
-		gGraph->registerPoseSensor(gOdometry);
+		gMapper->registerPoseSensor(gOdometry);
 	}else
 	{
 		gOdometry = NULL;

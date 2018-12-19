@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
 )
 
-find_package(SLAM3D REQUIRED)
+find_package(slam3d REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -34,8 +34,11 @@ catkin_package(
 # Mapper
 add_executable(mapper_node src/mapper_node.cpp)
 target_include_directories(mapper_node PRIVATE ${catkin_INCLUDE_DIRS})
-target_link_libraries(mapper_node
-  slam3d::slam3d
+target_link_libraries(mapper_node PUBLIC
+  slam3d::core
+  slam3d::graph-boost
+  slam3d::sensor-pcl
+  slam3d::solver-g2o
   ${catkin_LIBRARIES}
 )
 

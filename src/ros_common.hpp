@@ -3,10 +3,10 @@
 #include <tf_conversions/tf_eigen.h>
 #include <visualization_msgs/Marker.h>
 
-#include <slam3d/Logger.hpp>
-#include <slam3d/Clock.hpp>
-#include <slam3d/PoseSensor.hpp>
-#include <slam3d/Graph.hpp>
+#include <slam3d/core/Logger.hpp>
+#include <slam3d/core/Clock.hpp>
+#include <slam3d/core/PoseSensor.hpp>
+#include <slam3d/core/Graph.hpp>
 
 using namespace slam3d;
 
@@ -103,10 +103,12 @@ public:
 		
 		if(mLastVertex > 0)
 		{
-			Transform tf = mLastOdometricPose.inverse() * currentPose;
-			Covariance<6> cov = Covariance<6>::Identity() * 100;
-			mGraph->addConstraint(mLastVertex, vertex, tf, cov, mName, "odometry");
-			mGraph->setCorrectedPose(vertex, mGraph->getCurrentPose() * tf);
+			TransformWithCovariance twc;
+			twc.transform = mLastOdometricPose.inverse() * currentPose;
+			twc.covariance = Covariance<6>::Identity() * 100;
+			SE3Constraint::Ptr se3(new SE3Constraint(mName, twc));
+			mGraph->addConstraint(mLastVertex, vertex, se3);
+			mGraph->setCorrectedPose(vertex, mGraph->getVertex(mLastVertex).corrected_pose * twc.transform);
 		}
 		mLastVertex = vertex;
 		mLastOdometricPose = currentPose;
