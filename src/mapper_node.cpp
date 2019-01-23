@@ -169,14 +169,20 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	
 	slam3d::PointCloudMeasurement::Ptr m(
 		new slam3d::PointCloudMeasurement(cloud, gRobotName, gSensorName, gPclSensor->getSensorPose()));
-	if(gUseOdometry)
+	try
 	{
-		gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()));
-	}else
+		if(gUseOdometry)
+		{
+			gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()));
+		}else
+		{
+			gPclSensor->addMeasurement(m);
+		}
+	}catch(std::exception &e)
 	{
-		gPclSensor->addMeasurement(m);
+		ROS_ERROR("Could not add new measurement: %s", e.what());
+		return;
 	}
-	
 	slam3d::Transform current = gMapper->getCurrentPose();
 	if(current.matrix().determinant() == 0)
 	{
@@ -212,8 +218,8 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 
 bool optimize(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 {
-//	gSolver->saveGraph("input_graph.g2o");
-//	bool success = gGraph->optimize();
+	gSolver->saveGraph("input_graph.g2o");
+	bool success = gGraph->optimize();
 	return true;
 }
 
@@ -366,7 +372,7 @@ int main(int argc, char **argv)
 	
 	delete gGraph;
 	delete gPclSensor;
-//	delete gSolver;
+	delete gSolver;
 	delete logger;
 	delete clock;
 	delete gTransformBroadcaster;
