@@ -1,0 +1,31 @@
+<launch>
+	<param name="use_sim_time" value="true" />
+
+	<node name="MiaOdometry" pkg="ros_mia_odometry" type="ros_mia_odometry_node" />
+
+	<!-- Crop-Box Filter -->
+	 <node name="NodeletManager" pkg="nodelet" type="nodelet" args="manager" />
+
+	<node name="CropBox" pkg="nodelet" type="nodelet" args="load pcl/CropBox NodeletManager">
+		<remap from="~input" to="velodyne/velodyne_points" />
+		<remap from="~output" to="filtered_points" />
+		<param name="min_x" value="-2.0" />
+		<param name="max_x" value="2.0" />
+		<param name="min_y" value="-2.0" />
+		<param name="max_y" value="2.0" />
+		<param name="min_z" value="-2.0" />
+		<param name="max_z" value="2.0" />
+		<param name="negative" value="true" />
+	</node>
+
+	<!-- Mapper -->
+	<rosparam file="$(find slam3d_ros)/param/mia_mapper.yaml"/>
+	<node name="Mapper" pkg="slam3d_ros" type="mapper_node">
+		<remap from="pointcloud" to="filtered_points" />
+	</node>
+
+	<!-- RVIZ to view the visualization -->
+	<node name="RVIZ" pkg="rviz" type="rviz" args=" -d $(find slam3d_ros)/launch/mia.rviz" />
+
+</launch>
+

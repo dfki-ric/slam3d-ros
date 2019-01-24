@@ -101,8 +101,10 @@
   </VirtualDirectory>
   <VirtualDirectory Name="launch">
     <File Name="launch/kitti.launch"/>
+    <File Name="launch/mia.launch"/>
   </VirtualDirectory>
   <VirtualDirectory Name="param">
     <File Name="param/kitti_mapper.yaml"/>
+    <File Name="param/mia_mapper.yaml"/>
   </VirtualDirectory>
 </CodeLite_Project>
