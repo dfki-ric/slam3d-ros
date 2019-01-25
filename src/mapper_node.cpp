@@ -32,6 +32,7 @@ slam3d::PointCloudSensor* gPclSensor;
 slam3d::G2oSolver* gSolver;
 
 RosTfOdometry* gOdometry;
+tf::StampedTransform gOdomInMap;
 
 int gCount;
 double gMapResolution;
@@ -167,16 +168,17 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 		cloud = slam3d::PointCloud::Ptr(new slam3d::PointCloud(*pcl));
 	}
 	
+	bool added;
 	slam3d::PointCloudMeasurement::Ptr m(
 		new slam3d::PointCloudMeasurement(cloud, gRobotName, gSensorName, gPclSensor->getSensorPose()));
 	try
 	{
 		if(gUseOdometry)
 		{
-			gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()));
+			added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()));
 		}else
 		{
-			gPclSensor->addMeasurement(m);
+			added = gPclSensor->addMeasurement(m);
 		}
 	}catch(std::exception &e)
 	{
@@ -193,18 +195,22 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	t.fromNSec(pcl->header.stamp * 1000);
 	if(gUseOdometry)
 	{
-		tf::Stamped<tf::Pose> map_in_robot(eigen2tf(current.inverse()), t, gRobotFrame);
-		tf::Stamped<tf::Pose> map_in_odom;
-		try
+		if(added)
 		{
-			gTransformListener->waitForTransform(gRobotFrame, gOdometryFrame, t, ros::Duration(1.0));
-			gTransformListener->transformPose(gOdometryFrame, map_in_robot, map_in_odom);
-			tf::StampedTransform odom_in_map(map_in_odom.inverse(), t, gMapFrame, gOdometryFrame);
-			gTransformBroadcaster->sendTransform(odom_in_map);
-		}catch(tf2::TransformException &e)
-		{
-			ROS_ERROR("%s", e.what());
+			tf::Stamped<tf::Pose> map_in_robot(eigen2tf(current.inverse()), t, gRobotFrame);
+			tf::Stamped<tf::Pose> map_in_odom;
+			try
+			{
+				gTransformListener->waitForTransform(gRobotFrame, gOdometryFrame, t, ros::Duration(0.1));
+				gTransformListener->transformPose(gOdometryFrame, map_in_robot, map_in_odom);
+				gOdomInMap = tf::StampedTransform(map_in_odom.inverse(), t, gMapFrame, gOdometryFrame);
+			}catch(tf2::TransformException &e)
+			{
+				ROS_ERROR("%s", e.what());
+			}
 		}
+		gOdomInMap.stamp_ = t;
+		gTransformBroadcaster->sendTransform(gOdomInMap);
 	}else
 	{
 		tf::StampedTransform robot_in_map(eigen2tf(current), t, gMapFrame, gRobotFrame);
