@@ -159,6 +159,20 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	ROS_DEBUG("Received scan");
 	gSignalPublisher->publish(std_msgs::Empty());
 
+	// Get the pose of the laser scanner
+	ros::Time t;
+	t.fromNSec(pcl->header.stamp * 1000);
+	tf::StampedTransform laser_pose;
+	try
+	{
+		gTransformListener->waitForTransform(gRobotFrame, gLaserFrame, t, ros::Duration(0.1));
+		gTransformListener->lookupTransform(gRobotFrame, gLaserFrame, t, laser_pose);
+	}catch(tf2::TransformException &e)
+	{
+		ROS_WARN("Could not get transform: '%s' => '%s'!", gRobotFrame.c_str(), gLaserFrame.c_str());
+		return;
+	}
+
 	slam3d::PointCloud::Ptr cloud;
 	if(gScanResolution > 0)
 	{
@@ -170,7 +184,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	
 	bool added;
 	slam3d::PointCloudMeasurement::Ptr m(
-		new slam3d::PointCloudMeasurement(cloud, gRobotName, gSensorName, gPclSensor->getSensorPose()));
+		new slam3d::PointCloudMeasurement(cloud, gRobotName, gSensorName, tf2eigen(laser_pose)));
 	try
 	{
 		if(gUseOdometry)
@@ -191,8 +205,6 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 		ROS_ERROR("Current pose from mapper has 0 determinant!");
 	}
 	
-	ros::Time t;
-	t.fromNSec(pcl->header.stamp * 1000);
 	if(gUseOdometry)
 	{
 		if(added)
@@ -276,21 +288,9 @@ int main(int argc, char **argv)
 	gMapFrame = gTransformListener->resolve(gMapFrame);
 	gLaserFrame = gTransformListener->resolve(gLaserFrame);
 	
-	// Get the pose of the laser scanner
-	tf::StampedTransform laser_pose;
-	try
-	{
-		gTransformListener->waitForTransform(gRobotFrame, gLaserFrame, ros::Time(0), ros::Duration(3.0));
-		gTransformListener->lookupTransform(gRobotFrame, gLaserFrame, ros::Time(0), laser_pose);
-	}catch(tf2::TransformException &e)
-	{
-		ROS_WARN("Could not get transform: '%s' => '%s'!", gRobotFrame.c_str(), gLaserFrame.c_str());
-		laser_pose.setIdentity();
-	}
-	
 	// Create the PointCloudSensor for the velodyne laser
 	n.param("sensor_name", gSensorName, std::string("PointCloudSensor"));
-	gPclSensor = new slam3d::PointCloudSensor(gSensorName, logger, tf2eigen(laser_pose));
+	gPclSensor = new slam3d::PointCloudSensor(gSensorName, logger);
 
 	slam3d::GICPConfiguration gicp_conf;
 	n.param("icp_fine/correspondence_randomness", gicp_conf.correspondence_randomness, gicp_conf.correspondence_randomness);
