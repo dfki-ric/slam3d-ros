@@ -291,6 +291,7 @@ int main(int argc, char **argv)
 	// Create the PointCloudSensor for the velodyne laser
 	n.param("sensor_name", gSensorName, std::string("PointCloudSensor"));
 	gPclSensor = new slam3d::PointCloudSensor(gSensorName, logger);
+	gPclSensor->setMultiThreaded(true);
 
 	slam3d::GICPConfiguration gicp_conf;
 	n.param("icp_fine/correspondence_randomness", gicp_conf.correspondence_randomness, gicp_conf.correspondence_randomness);
