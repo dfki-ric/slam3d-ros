@@ -1,7 +1,6 @@
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
-#include <visualization_msgs/Marker.h>
 
 #include <slam3d/core/Logger.hpp>
 #include <slam3d/core/Clock.hpp>
