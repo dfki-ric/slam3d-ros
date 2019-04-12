@@ -1,0 +1,13 @@
+# Mapper params
+
+min_translation: 0.5
+min_rotation: 0.5
+
+use_odometry: true
+
+robot_name: "Robot"
+odometry_frame: "odom"
+robot_frame: "base_link"
+map_frame: "map"
+laser_frame: "laser"
+

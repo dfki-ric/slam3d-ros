@@ -1,0 +1,31 @@
+# Mapper params
+scan_resolution: 0.05
+map_resolution: 0.05
+neighbor_radius: 3.0
+max_neighbor_links: 1
+patch_building_range: 3
+map_outlier_radius: 0.2
+map_outlier_neighbors: 1
+min_translation: 0.4
+min_rotation: 0.2
+
+use_odometry: true
+add_odometry_edges: true
+use_odometry_heading: false
+
+robot_name: "Robot"
+odometry_frame: "odom"
+robot_frame: "base_link"
+map_frame: "map"
+laser_frame: "camera_rgb_optical_frame"
+
+# GICP params
+icp_fine/max_correspondence_distance: 0.25
+icp_fine/max_fitness_score: 25.0
+icp_fine/maximum_iterations: 50
+icp_fine/point_cloud_density: 0.05
+
+icp_coarse/max_correspondence_distance: 0.5
+icp_coarse/max_fitness_score: 5.0
+icp_coarse/maximum_iterations: 50
+icp_coarse/point_cloud_density: 0.05

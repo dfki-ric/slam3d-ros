@@ -35,13 +35,25 @@ add_library(visualization src/GraphPublisher.cpp)
 target_include_directories(visualization PRIVATE ${catkin_INCLUDE_DIRS})
 target_link_libraries(visualization PUBLIC slam3d::core ${catkin_LIBRARIES})
 
-# Mapper
+# 3D-Mapper
 add_executable(mapper_node src/mapper_node.cpp)
 target_include_directories(mapper_node PRIVATE ${catkin_INCLUDE_DIRS})
 target_link_libraries(mapper_node PUBLIC
   slam3d::core
   slam3d::graph-boost
   slam3d::sensor-pcl
+  slam3d::solver-g2o
+  visualization
+  ${catkin_LIBRARIES}
+)
+
+# 2D-Mapper
+add_executable(mapper2d_node src/mapper2d_node.cpp)
+target_include_directories(mapper2d_node PRIVATE ${catkin_INCLUDE_DIRS})
+target_link_libraries(mapper2d_node PUBLIC
+  slam3d::core
+  slam3d::graph-boost
+  slam3d::sensor-pointmatcher
   slam3d::solver-g2o
   visualization
   ${catkin_LIBRARIES}

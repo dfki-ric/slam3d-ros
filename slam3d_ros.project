@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<CodeLite_Project Name="slam3d_ros" InternalType="">
+<CodeLite_Project Name="slam3d_ros" InternalType="" Version="10.0.0">
   <Description/>
   <Dependencies/>
   <Settings Type="Dynamic Library">
@@ -94,6 +94,9 @@
     <File Name="src/ros_common.hpp"/>
     <File Name="src/velodyne_publisher.cpp"/>
     <File Name="src/kitti_publisher.cpp"/>
+    <File Name="src/mapper2d_node.cpp"/>
+    <File Name="src/GraphPublisher.hpp"/>
+    <File Name="src/GraphPublisher.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="build">
     <File Name="CMakeLists.txt"/>
@@ -102,9 +105,11 @@
   <VirtualDirectory Name="launch">
     <File Name="launch/kitti.launch"/>
     <File Name="launch/mia.launch"/>
+    <File Name="launch/one_loop.launch"/>
   </VirtualDirectory>
   <VirtualDirectory Name="param">
     <File Name="param/kitti_mapper.yaml"/>
     <File Name="param/mia_mapper.yaml"/>
+    <File Name="param/one_loop.yaml"/>
   </VirtualDirectory>
 </CodeLite_Project>

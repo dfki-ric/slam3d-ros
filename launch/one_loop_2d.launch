@@ -1,0 +1,12 @@
+<launch>
+	<param name="use_sim_time" value="true" />
+
+	<!-- Mapper -->
+	<rosparam file="$(find slam3d_ros)/param/one_loop_mapper2d.yaml"/>
+	<node name="Mapper" pkg="slam3d_ros" type="mapper2d_node" />
+
+	<!-- RVIZ to view the visualization -->
+	<node name="RVIZ" pkg="rviz" type="rviz" args=" -d $(find slam3d_ros)/launch/one_loop_2d.rviz" />
+
+</launch>
+

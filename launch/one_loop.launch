@@ -1,0 +1,24 @@
+<launch>
+	<param name="use_sim_time" value="false" />
+
+	<!-- Nodelet manager -->
+	<node pkg="nodelet" type="nodelet" args="manager" name="Manager" output="screen" />
+
+	<!-- Convert depth image to point cloud -->
+	<node pkg="nodelet" type="nodelet" name="depth_image_proc" args="load depth_image_proc/point_cloud_xyz Manager" output="screen">
+		<remap from="camera_info" to="camera/depth_registered/camera_info"/>
+		<remap from="image_rect" to="camera/depth_registered/image_raw"/>
+		<remap from="points" to="filtered_points"/>
+	</node>
+
+	<!-- Mapper -->
+	<rosparam file="$(find slam3d_ros)/param/one_loop.yaml"/>
+	<node name="Mapper" pkg="slam3d_ros" type="mapper_node">
+		<remap from="pointcloud" to="filtered_points" />
+	</node>
+
+	<!-- RVIZ to view the visualization -->
+	<node name="RVIZ" pkg="rviz" type="rviz" args=" -d $(find slam3d_ros)/launch/one_loop.rviz" />
+
+</launch>
+
