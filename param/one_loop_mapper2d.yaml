@@ -1,7 +1,11 @@
 # Mapper params
 
-min_translation: 0.2
+min_translation: 0.3
 min_rotation: 0.2
+
+neighbor_radius: 2.0
+max_neighbor_links: 1
+patch_building_range: 5
 
 robot_name: "Robot"
 odometry_frame: "odom"

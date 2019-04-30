@@ -8,7 +8,7 @@
 
 #include <slam3d/core/Mapper.hpp>
 #include <slam3d/graph/boost/BoostGraph.hpp>
-#include <slam3d/sensor/pointmatcher/ScanSensor.hpp>
+#include <slam3d/sensor/pointmatcher/Scan2DSensor.hpp>
 #include <slam3d/solver/g2o/G2oSolver.hpp>
 
 #include <iostream>
@@ -28,7 +28,7 @@ GraphPublisher* gGraphPublisher;
 slam3d::Logger* gLogger;
 slam3d::BoostGraph* gGraph;
 slam3d::Mapper* gMapper;
-slam3d::ScanSensor* gScanSensor;
+slam3d::Scan2DSensor* gScan2DSensor;
 slam3d::G2oSolver* gSolver;
 
 std::string gRobotName;
@@ -65,7 +65,7 @@ bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 	VertexObjectList vertices = gGraph->getVerticesFromSensor(gSensorName);
 	for(VertexObjectList::iterator v = vertices.begin(); v != vertices.end(); v++)
 	{
-		ScanMeasurement::Ptr scan = boost::dynamic_pointer_cast<ScanMeasurement>(v->measurement);
+		Scan2DMeasurement::Ptr scan = boost::dynamic_pointer_cast<Scan2DMeasurement>(v->measurement);
 		assert(scan);
 		const PM::DataPoints& dp = scan->getDataPoints();
 		
@@ -73,7 +73,7 @@ bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 		rigidTrans = PM::get().REG(Transformation).create("RigidTransformation");
 		
 		// Create the 2D-Transformation
-		PM::TransformationParameters tp = gScanSensor->convert3Dto2D(v->corrected_pose);
+		PM::TransformationParameters tp = gScan2DSensor->convert3Dto2D(v->corrected_pose);
 		if (!rigidTrans->checkParameters(tp))
 		{
 			ROS_WARN("Not a valid rigid transformation!");
@@ -130,12 +130,12 @@ void receiveScan(const sensor_msgs::LaserScan::ConstPtr& scan)
 	stamp.tv_sec  = rostime.sec;
 	stamp.tv_usec = rostime.nsec / 1000;
 	
-	ScanMeasurement::Ptr m(new ScanMeasurement(dp, stamp, gRobotName, gSensorName, slam3d::Transform::Identity()));
+	Scan2DMeasurement::Ptr m(new Scan2DMeasurement(dp, stamp, gRobotName, gSensorName, slam3d::Transform::Identity()));
 	
 	bool added;
 	try
 	{
-		added = gScanSensor->addMeasurement(m, gOdometry->getPose(stamp));
+		added = gScan2DSensor->addMeasurement(m, gOdometry->getPose(stamp));
 	}catch(std::exception &e)
 	{
 		ROS_ERROR("Could not add scan: %s", e.what());
@@ -203,13 +203,24 @@ int main(int argc, char **argv)
 	
 	// Create the ScanSensor for the 2d laser
 	n.param("sensor_name", gSensorName, std::string("ScanSensor"));
-	gScanSensor = new slam3d::ScanSensor(gSensorName, gLogger);
-	gMapper->registerSensor(gScanSensor);
+	gScan2DSensor = new slam3d::Scan2DSensor(gSensorName, gLogger);
+	gMapper->registerSensor(gScan2DSensor);
 	
-	double translation, rotation;
+	double translation;
+	double rotation;
 	n.param("min_translation", translation, 0.5);
 	n.param("min_rotation", rotation, 0.1);
-	gScanSensor->setMinPoseDistance(translation, rotation);
+	gScan2DSensor->setMinPoseDistance(translation, rotation);
+
+	int range;
+	n.param("patch_building_range", range, 5);
+	gScan2DSensor->setPatchBuildingRange(range);
+
+	double radius;
+	int links;
+	n.param("neighbor_radius", radius, 5.0);
+	n.param("max_neighbor_links", links, 5);
+	gScan2DSensor->setNeighborRadius(radius, links);
 
 	gOdometry = new RosTfOdometry(gGraph, gLogger, n);
 	gMapper->registerPoseSensor(gOdometry);
@@ -233,7 +244,7 @@ int main(int argc, char **argv)
 	
 	delete gGraph;
 	delete gGraphPublisher;
-	delete gScanSensor;
+	delete gScan2DSensor;
 	delete gSolver;
 	delete gLogger;
 	delete gTransformBroadcaster;
