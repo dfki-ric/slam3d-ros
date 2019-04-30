@@ -25,6 +25,7 @@ ros::ServiceServer* gShowMapService;
 ros::ServiceServer* gWriteGraphService;
 GraphPublisher* gGraphPublisher;
 
+slam3d::Logger* gLogger;
 slam3d::BoostGraph* gGraph;
 slam3d::Mapper* gMapper;
 slam3d::ScanSensor* gScanSensor;
@@ -41,7 +42,6 @@ std::string gLaserFrame;
 
 RosTfOdometry* gOdometry;
 tf::StampedTransform gOdomInMap;
-bool gUseOdometry;
 
 typedef slam3d::PM::DataPoints::Label Label;
 typedef slam3d::PM::DataPoints::Labels Labels;
@@ -50,9 +50,8 @@ using namespace slam3d;
 
 bool optimize(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 {
-//	gSolver->saveGraph("input_graph.g2o");
-//	bool success = gGraph->optimize();
-	return true;
+	gSolver->saveGraph("input_graph.g2o");
+	return gGraph->optimize();
 }
 
 bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
@@ -149,31 +148,29 @@ void receiveScan(const sensor_msgs::LaserScan::ConstPtr& scan)
 		ROS_ERROR("Current pose from mapper has 0 determinant!");
 	}
 	
-	if(gUseOdometry)
+	// Publish the transformations
+	if(added)
 	{
-		if(added)
+		tf::Stamped<tf::Pose> map_in_robot(eigen2tf(current.inverse()), rostime, gRobotFrame);
+		tf::Stamped<tf::Pose> map_in_odom;
+		try
 		{
-			tf::Stamped<tf::Pose> map_in_robot(eigen2tf(current.inverse()), rostime, gRobotFrame);
-			tf::Stamped<tf::Pose> map_in_odom;
-			try
-			{
-				gTransformListener->waitForTransform(gRobotFrame, gOdometryFrame, rostime, ros::Duration(0.1));
-				gTransformListener->transformPose(gOdometryFrame, map_in_robot, map_in_odom);
-				gOdomInMap = tf::StampedTransform(map_in_odom.inverse(), rostime, gMapFrame, gOdometryFrame);
-			}catch(tf2::TransformException &e)
-			{
-				ROS_ERROR("%s", e.what());
-			}
+			gTransformListener->waitForTransform(gRobotFrame, gOdometryFrame, rostime, ros::Duration(0.1));
+			gTransformListener->transformPose(gOdometryFrame, map_in_robot, map_in_odom);
+			gOdomInMap = tf::StampedTransform(map_in_odom.inverse(), rostime, gMapFrame, gOdometryFrame);
+		}catch(tf2::TransformException &e)
+		{
+			ROS_ERROR("%s", e.what());
 		}
-		gOdomInMap.stamp_ = rostime;
-		gTransformBroadcaster->sendTransform(gOdomInMap);
-	}else
-	{
-		tf::StampedTransform robot_in_map(eigen2tf(current), rostime, gMapFrame, gRobotFrame);
-		gTransformBroadcaster->sendTransform(robot_in_map);
 	}
+	gOdomInMap.stamp_ = rostime;
+	gTransformBroadcaster->sendTransform(gOdomInMap);
 	
-	gGraphPublisher->publishGraph(scan->header.stamp, gMapFrame);
+	// Publish the graph
+	if(added)
+	{
+		gGraphPublisher->publishGraph(scan->header.stamp, gMapFrame);
+	}
 }
 
 int main(int argc, char **argv)
@@ -184,14 +181,13 @@ int main(int argc, char **argv)
 	gTransformBroadcaster = new tf::TransformBroadcaster;
 	gTransformListener = new tf::TransformListener();
 	
-	slam3d::Clock* clock = new RosClock();
-	slam3d::Logger* logger = new RosLogger();
-	logger->setLogLevel(DEBUG);
+	gLogger = new RosLogger();
+	gLogger->setLogLevel(DEBUG);
 	
-	gGraph = new slam3d::BoostGraph(logger);
-	gMapper = new slam3d::Mapper(gGraph, logger);
-//	gSolver = new slam3d::G2oSolver(logger);
-//	gGraph->setSolver(gSolver);
+	gGraph = new slam3d::BoostGraph(gLogger);
+	gMapper = new slam3d::Mapper(gGraph, gLogger);
+	gSolver = new slam3d::G2oSolver(gLogger);
+	gGraph->setSolver(gSolver);
 	
 	n.param("robot_name", gRobotName, std::string("Robot"));
 	n.param("odometry_frame", gOdometryFrame, std::string("odometry"));
@@ -207,7 +203,7 @@ int main(int argc, char **argv)
 	
 	// Create the ScanSensor for the 2d laser
 	n.param("sensor_name", gSensorName, std::string("ScanSensor"));
-	gScanSensor = new slam3d::ScanSensor(gSensorName, logger);
+	gScanSensor = new slam3d::ScanSensor(gSensorName, gLogger);
 	gMapper->registerSensor(gScanSensor);
 	
 	double translation, rotation;
@@ -215,15 +211,8 @@ int main(int argc, char **argv)
 	n.param("min_rotation", rotation, 0.1);
 	gScanSensor->setMinPoseDistance(translation, rotation);
 
-	n.param("use_odometry", gUseOdometry, false);
-	if(gUseOdometry)
-	{
-		gOdometry = new RosTfOdometry(gGraph, logger, n);
-		gMapper->registerPoseSensor(gOdometry);
-	}else
-	{
-		gOdometry = NULL;
-	}
+	gOdometry = new RosTfOdometry(gGraph, gLogger, n);
+	gMapper->registerPoseSensor(gOdometry);
 
 	// Subscribe to point cloud
 	ros::Subscriber scanSub = n.subscribe<sensor_msgs::LaserScan>("scan", 10, &receiveScan);
@@ -245,9 +234,8 @@ int main(int argc, char **argv)
 	delete gGraph;
 	delete gGraphPublisher;
 	delete gScanSensor;
-//	delete gSolver;
-	delete logger;
-	delete clock;
+	delete gSolver;
+	delete gLogger;
 	delete gTransformBroadcaster;
 	delete gTransformListener;
 	return 0;

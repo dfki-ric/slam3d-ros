@@ -106,10 +106,12 @@
     <File Name="launch/kitti.launch"/>
     <File Name="launch/mia.launch"/>
     <File Name="launch/one_loop.launch"/>
+    <File Name="launch/one_loop_2d.launch"/>
   </VirtualDirectory>
   <VirtualDirectory Name="param">
     <File Name="param/kitti_mapper.yaml"/>
     <File Name="param/mia_mapper.yaml"/>
     <File Name="param/one_loop.yaml"/>
+    <File Name="param/one_loop_mapper2d.yaml"/>
   </VirtualDirectory>
 </CodeLite_Project>

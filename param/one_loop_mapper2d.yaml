@@ -1,9 +1,7 @@
 # Mapper params
 
-min_translation: 0.5
-min_rotation: 0.5
-
-use_odometry: true
+min_translation: 0.2
+min_rotation: 0.2
 
 robot_name: "Robot"
 odometry_frame: "odom"
