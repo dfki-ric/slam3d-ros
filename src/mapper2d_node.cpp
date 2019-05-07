@@ -39,7 +39,7 @@ std::string gRobotFrame;
 std::string gMapFrame;
 std::string gLaserFrame;
 
-
+slam3d::Transform gSensorPose;
 RosTfOdometry* gOdometry;
 tf::StampedTransform gOdomInMap;
 
@@ -67,21 +67,9 @@ bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 	{
 		Scan2DMeasurement::Ptr scan = boost::dynamic_pointer_cast<Scan2DMeasurement>(v->measurement);
 		assert(scan);
-		const PM::DataPoints& dp = scan->getDataPoints();
 		
-		std::shared_ptr<PM::Transformation> rigidTrans;
-		rigidTrans = PM::get().REG(Transformation).create("RigidTransformation");
-		
-		// Create the 2D-Transformation
-		PM::TransformationParameters tp = gScan2DSensor->convert3Dto2D(v->corrected_pose);
-		if (!rigidTrans->checkParameters(tp))
-		{
-			ROS_WARN("Not a valid rigid transformation!");
-			tp = rigidTrans->correctParameters(tp);
-		}
-		
-		// Do the transformation
-		PM::DataPoints dp_in_map = rigidTrans->compute(dp,tp);
+		Transform pose = v->corrected_pose * v->measurement->getSensorPose();
+		PM::DataPoints dp_in_map = gScan2DSensor->transformDataPoints(scan->getDataPoints(), pose);
 		
 		// Write into ROS-Msg
 		unsigned numPoints = dp_in_map.features.cols();
@@ -130,7 +118,19 @@ void receiveScan(const sensor_msgs::LaserScan::ConstPtr& scan)
 	stamp.tv_sec  = rostime.sec;
 	stamp.tv_usec = rostime.nsec / 1000;
 	
-	Scan2DMeasurement::Ptr m(new Scan2DMeasurement(dp, stamp, gRobotName, gSensorName, slam3d::Transform::Identity()));
+	// Get the pose of the laser scanner
+	tf::StampedTransform laser_pose;
+	try
+	{
+		gTransformListener->waitForTransform(gRobotFrame, gLaserFrame, rostime, ros::Duration(0.1));
+		gTransformListener->lookupTransform(gRobotFrame, gLaserFrame, rostime, laser_pose);
+	}catch(tf2::TransformException &e)
+	{
+		ROS_WARN("Could not get transform: '%s' => '%s'!", gRobotFrame.c_str(), gLaserFrame.c_str());
+		return;
+	}
+	
+	Scan2DMeasurement::Ptr m(new Scan2DMeasurement(dp, stamp, gRobotName, gSensorName, tf2eigen(laser_pose)));
 	
 	bool added;
 	try
@@ -202,8 +202,10 @@ int main(int argc, char **argv)
 	gLaserFrame = gTransformListener->resolve(gLaserFrame);
 	
 	// Create the ScanSensor for the 2d laser
+	std::string icp_config;
 	n.param("sensor_name", gSensorName, std::string("ScanSensor"));
-	gScan2DSensor = new slam3d::Scan2DSensor(gSensorName, gLogger);
+	n.param("icp_config_file", icp_config, std::string(""));
+	gScan2DSensor = new slam3d::Scan2DSensor(gSensorName, gLogger, icp_config);
 	gMapper->registerSensor(gScan2DSensor);
 	
 	double translation;
@@ -238,7 +240,7 @@ int main(int argc, char **argv)
 	gMapPublisher = &pclPub;
 	gGraphPublisher = new GraphPublisher(gGraph, gSensorName);
 
-	ROS_INFO("Mapper2D is ready!");
+	gLogger->message(INFO, "Mapper2D is ready!");
 	
 	ros::spin();
 	
