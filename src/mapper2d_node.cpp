@@ -30,6 +30,7 @@ slam3d::BoostGraph* gGraph;
 slam3d::Mapper* gMapper;
 slam3d::Scan2DSensor* gScan2DSensor;
 slam3d::G2oSolver* gSolver;
+slam3d::G2oSolver* gPatchSolver;
 
 std::string gRobotName;
 std::string gSensorName;
@@ -206,6 +207,7 @@ int main(int argc, char **argv)
 	n.param("sensor_name", gSensorName, std::string("ScanSensor"));
 	n.param("icp_config_file", icp_config, std::string(""));
 	gScan2DSensor = new slam3d::Scan2DSensor(gSensorName, gLogger, icp_config);
+	gScan2DSensor->writeDebugData();
 	gMapper->registerSensor(gScan2DSensor);
 	
 	double translation;
@@ -216,7 +218,9 @@ int main(int argc, char **argv)
 
 	int range;
 	n.param("patch_building_range", range, 5);
+	gPatchSolver = new G2oSolver(gLogger);
 	gScan2DSensor->setPatchBuildingRange(range);
+	gScan2DSensor->setPatchSolver(gPatchSolver);
 
 	double radius;
 	int links;
@@ -247,6 +251,7 @@ int main(int argc, char **argv)
 	delete gGraph;
 	delete gGraphPublisher;
 	delete gScan2DSensor;
+	delete gPatchSolver;
 	delete gSolver;
 	delete gLogger;
 	delete gTransformBroadcaster;
