@@ -89,6 +89,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 		{
 			added = gPclSensor->addMeasurement(m);
 		}
+		gPclSensor->linkLastToNeighbors(true);
 	}catch(std::exception &e)
 	{
 		ROS_ERROR("Could not add new measurement: %s", e.what());
@@ -185,7 +186,6 @@ int main(int argc, char **argv)
 	// Create the PointCloudSensor for the velodyne laser
 	n.param("sensor_name", gSensorName, std::string("PointCloudSensor"));
 	gPclSensor = new slam3d::PointCloudSensor(gSensorName, logger);
-	gPclSensor->setMultiThreaded(true);
 
 	slam3d::GICPConfiguration gicp_conf;
 	n.param("icp_fine/correspondence_randomness", gicp_conf.correspondence_randomness, gicp_conf.correspondence_randomness);
@@ -262,7 +262,8 @@ int main(int argc, char **argv)
 	gShowMapService = &showSrv;
 	gWriteGraphService = &writeSrv;
 	gSignalPublisher = &signalPub;
-	gGraphPublisher = new GraphPublisher(gGraph, gSensorName);
+	gGraphPublisher = new GraphPublisher(gGraph);
+	gGraphPublisher->addSensor(gSensorName, 0,1,0);
 
 	ROS_INFO("Mapper ready!");
 	

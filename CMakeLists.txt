@@ -53,6 +53,7 @@ target_include_directories(mapper2d_node PRIVATE ${catkin_INCLUDE_DIRS})
 target_link_libraries(mapper2d_node PUBLIC
   slam3d::core
   slam3d::graph-boost
+  slam3d::sensor-pcl
   slam3d::sensor-pointmatcher
   slam3d::solver-g2o
   visualization

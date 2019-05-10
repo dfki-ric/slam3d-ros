@@ -5,7 +5,7 @@
 
 using namespace slam3d;
 
-GraphPublisher::GraphPublisher(slam3d::Graph* g, const std::string& s) : mGraph(g), mSensor(s)
+GraphPublisher::GraphPublisher(slam3d::Graph* g) : mGraph(g)
 {
 	ros::NodeHandle n;
 	mPosePublisher = n.advertise<visualization_msgs::Marker>("vertices", 1, true);
@@ -17,10 +17,17 @@ GraphPublisher::~GraphPublisher()
 	
 }
 
+void GraphPublisher::addSensor(const std::string& sensor, double r, double g, double b)
+{
+	Color color;
+	color.r = r;
+	color.g = g;
+	color.b = b;
+	mSensorMap.insert(std::pair<std::string, Color>(sensor, color));
+}
+
 void GraphPublisher::publishNodes(const ros::Time& stamp, const std::string& frame)
 {
-	slam3d::VertexObjectList vertices = mGraph->getVerticesFromSensor(mSensor);
-
 	visualization_msgs::Marker marker;
 	marker.header.frame_id = frame;
 	marker.header.stamp = stamp;
@@ -41,7 +48,16 @@ void GraphPublisher::publishNodes(const ros::Time& stamp, const std::string& fra
 	marker.color.r = 0.0;
 	marker.color.g = 1.0;
 	marker.color.b = 0.0;
+	
+	slam3d::VertexObjectList vertices;
+	for(auto it = mSensorMap.begin(); it != mSensorMap.end(); it++)
+	{
+		slam3d::VertexObjectList v = mGraph->getVerticesFromSensor(it->first);
+		vertices.insert(vertices.end(), v.begin(), v.end());
+	}
+	
 	marker.points.resize(vertices.size());
+	marker.colors.resize(vertices.size());
 	
 	unsigned i = 0;
 	for(VertexObjectList::const_iterator it = vertices.begin(); it != vertices.end(); it++)
@@ -50,6 +66,13 @@ void GraphPublisher::publishNodes(const ros::Time& stamp, const std::string& fra
 		marker.points[i].x = pose.translation()[0];
 		marker.points[i].y = pose.translation()[1];
 		marker.points[i].z = pose.translation()[2];
+		
+		Color c = mSensorMap.at(it->measurement->getSensorName());
+		marker.colors[i].r = c.r;
+		marker.colors[i].g = c.g;
+		marker.colors[i].b = c.b;
+		marker.colors[i].a = 1.0;
+		
 		i++;
 	}
 	mPosePublisher.publish(marker);
@@ -57,7 +80,7 @@ void GraphPublisher::publishNodes(const ros::Time& stamp, const std::string& fra
 
 void GraphPublisher::publishEdges(const ros::Time& stamp, const std::string& frame)
 {
-	slam3d::EdgeObjectList edges = mGraph->getEdgesFromSensor(mSensor);
+	slam3d::EdgeObjectList edges = mGraph->getEdgesFromSensor("sensor");
 
 	visualization_msgs::Marker marker;
 	marker.header.frame_id = frame;
