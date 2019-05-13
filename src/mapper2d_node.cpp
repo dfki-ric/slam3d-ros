@@ -67,6 +67,8 @@ bool optimize(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 	return gGraph->optimize();
 }
 
+typedef Eigen::Matrix<ScalarType,4,1> Point;
+
 bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 {
 	// Show 2D map
@@ -74,23 +76,30 @@ bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 	pc_msg.header.stamp = ros::Time::now();
 	pc_msg.header.frame_id = gMapFrame;
 	
-	geometry_msgs::Point32 p_msg;
-	p_msg.z = 0;
+	
 	VertexObjectList vertices = gGraph->getVerticesFromSensor(gLaserName);
 	for(VertexObjectList::iterator v = vertices.begin(); v != vertices.end(); v++)
 	{
+		Point point;
+		point(2) = 0; // z = 0
+		point(3) = 1; // homogenous vector
 		Scan2DMeasurement::Ptr scan = boost::dynamic_pointer_cast<Scan2DMeasurement>(v->measurement);
 		assert(scan);
 		
 		Transform pose = v->corrected_pose * v->measurement->getSensorPose();
-		PM::DataPoints dp_in_map = gScan2DSensor->transformDataPoints(scan->getDataPoints(), pose);
 		
-		// Write into ROS-Msg
-		unsigned numPoints = dp_in_map.features.cols();
+		// Transform to map and write into ROS-Msg
+		unsigned numPoints = scan->getDataPoints().features.cols();
 		for(unsigned p = 0; p < numPoints; p++)
 		{
-			p_msg.x = dp_in_map.features(0,p);
-			p_msg.y = dp_in_map.features(1,p);
+			point(0) = scan->getDataPoints().features(0,p);
+			point(1) = scan->getDataPoints().features(1,p);
+			Point point_tf = pose * point;
+			
+			geometry_msgs::Point32 p_msg;
+			p_msg.x = point_tf(0);
+			p_msg.y = point_tf(1);
+			p_msg.z = point_tf(2);
 			pc_msg.points.push_back(p_msg);
 		}
 	}
