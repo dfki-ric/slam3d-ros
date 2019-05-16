@@ -239,32 +239,6 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 		ROS_ERROR("Could not add new pointcloud measurement: %s", e.what());
 		return;
 	}
-	slam3d::Transform current = gMapper->getCurrentPose();
-	if(current.matrix().determinant() == 0)
-	{
-		ROS_ERROR("Current pose from mapper has 0 determinant!");
-	}
-	
-	if(added)
-	{
-		gPclSensor->linkLastToNeighbors(true);
-		tf::Stamped<tf::Pose> map_in_robot(eigen2tf(current.inverse()), t, gRobotFrame);
-		tf::Stamped<tf::Pose> map_in_odom;
-		try
-		{
-			gTransformListener->waitForTransform(gRobotFrame, gOdometryFrame, t, ros::Duration(0.1));
-			gTransformListener->transformPose(gOdometryFrame, map_in_robot, map_in_odom);
-			gOdomInMap = tf::StampedTransform(map_in_odom.inverse(), t, gMapFrame, gOdometryFrame);
-		}catch(tf2::TransformException &e)
-		{
-			ROS_ERROR("%s", e.what());
-		}
-	}
-	gOdomInMap.stamp_ = t;
-	gTransformBroadcaster->sendTransform(gOdomInMap);
-	
-	// Show the graph in RVIZ
-	gGraphPublisher->publishGraph(t, gMapFrame);
 }
 
 int main(int argc, char **argv)
@@ -309,12 +283,6 @@ int main(int argc, char **argv)
 	n.param("min_translation", translation, 0.5);
 	n.param("min_rotation", rotation, 0.1);
 	gScan2DSensor->setMinPoseDistance(translation, rotation);
-
-	int range;
-	n.param("patch_building_range", range, 5);
-	gPatchSolver = new G2oSolver(gLogger);
-	gScan2DSensor->setPatchBuildingRange(range);
-	gScan2DSensor->setPatchSolver(gPatchSolver);
 
 	double radius;
 	int links;
@@ -363,7 +331,12 @@ int main(int argc, char **argv)
 
 	gPclSensor->setNeighborRadius(3.0, 1);
 	gPclSensor->setMinPoseDistance(0.5, 0.25);
-	gPclSensor->setPatchBuildingRange(3);
+	
+	int range;
+	n.param("patch_building_range", range, 5);
+	gPatchSolver = new G2oSolver(gLogger);
+	gPclSensor->setPatchBuildingRange(range);
+	gPclSensor->setPatchSolver(gPatchSolver);
 
 	gMapper->registerSensor(gPclSensor);
 
