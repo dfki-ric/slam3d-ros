@@ -31,7 +31,10 @@ catkin_package(
 ## Build ##
 ###########
 
-add_library(visualization src/GraphPublisher.cpp)
+add_library(visualization
+  src/GraphPublisher.cpp
+  src/GpsPublisher.cpp
+)
 target_include_directories(visualization PRIVATE ${catkin_INCLUDE_DIRS})
 target_link_libraries(visualization PUBLIC slam3d::core ${catkin_LIBRARIES})
 
@@ -42,6 +45,7 @@ target_link_libraries(mapper_node PUBLIC
   slam3d::core
   slam3d::graph-boost
   slam3d::sensor-pcl
+  slam3d::sensor-gdal
   slam3d::solver-g2o
   visualization
   ${catkin_LIBRARIES}

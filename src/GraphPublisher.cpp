@@ -80,7 +80,7 @@ void GraphPublisher::publishNodes(const ros::Time& stamp, const std::string& fra
 
 void GraphPublisher::publishEdges(const ros::Time& stamp, const std::string& frame)
 {
-	slam3d::EdgeObjectList edges = mGraph->getEdgesFromSensor("sensor");
+	slam3d::EdgeObjectList edges = mGraph->getEdgesFromSensor("");
 
 	visualization_msgs::Marker marker;
 	marker.header.frame_id = frame;
@@ -108,6 +108,9 @@ void GraphPublisher::publishEdges(const ros::Time& stamp, const std::string& fra
 	unsigned i = 0;
 	for(EdgeObjectList::const_iterator edge = edges.begin(); edge != edges.end(); ++edge)
 	{
+		if(edge->constraint->getType() != SE3)
+			continue;
+
 		const VertexObject& source_obj = mGraph->getVertex(edge->source);
 		Transform::ConstTranslationPart source_pose = source_obj.corrected_pose.translation();
 		marker.points[2*i].x = source_pose[0];
@@ -120,10 +123,7 @@ void GraphPublisher::publishEdges(const ros::Time& stamp, const std::string& fra
 		marker.points[2*i+1].y = target_pose[1];
 		marker.points[2*i+1].z = target_pose[2];
 		
-		// Edges from PointcloudSensor should be of SE3 type
-		assert(edge->constraint->getType() == SE3);
 		SE3Constraint::Ptr se3 = boost::dynamic_pointer_cast<SE3Constraint>(edge->constraint);
-		
 		Transform diff_inv = target_obj.corrected_pose.inverse() * source_obj.corrected_pose;
 		Transform error = diff_inv * se3->getRelativePose().transform;
 		

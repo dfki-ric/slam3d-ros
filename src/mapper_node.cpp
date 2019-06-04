@@ -3,17 +3,21 @@
 #include <pcl_ros/transforms.h>
 #include <tf/transform_broadcaster.h>
 #include <tf_conversions/tf_eigen.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <std_srvs/Empty.h>
 #include <boost/uuid/uuid_io.hpp>
 
 #include <slam3d/core/Mapper.hpp>
 #include <slam3d/graph/boost/BoostGraph.hpp>
 #include <slam3d/sensor/pcl/PointCloudSensor.hpp>
+#include <slam3d/sensor/gdal/GpsSensor.hpp>
 #include <slam3d/solver/g2o/G2oSolver.hpp>
 
 #include <iostream>
+#include <thread>
 
 #include "GraphPublisher.hpp"
+#include "GpsPublisher.hpp"
 #include "ros_common.hpp"
 
 tf::TransformBroadcaster* gTransformBroadcaster;
@@ -25,11 +29,15 @@ ros::ServiceServer* gShowMapService;
 ros::ServiceServer* gWriteGraphService;
 ros::Publisher* gSignalPublisher;
 GraphPublisher* gGraphPublisher;
+GpsPublisher* gGpsPublisher;
+
 
 slam3d::BoostGraph* gGraph;
 slam3d::Mapper* gMapper;
 slam3d::PointCloudSensor* gPclSensor;
+slam3d::GpsSensor* gGpsSensor;
 slam3d::G2oSolver* gSolver;
+slam3d::G2oSolver* gPatchSolver;
 
 RosTfOdometry* gOdometry;
 tf::StampedTransform gOdomInMap;
@@ -43,11 +51,64 @@ int gMapOutlierNeighbors;
 
 std::string gRobotName;
 std::string gSensorName;
+std::string gGpsName;
 
 std::string gOdometryFrame;
 std::string gRobotFrame;
 std::string gMapFrame;
 std::string gLaserFrame;
+std::string gGpsFrame;
+
+bool checkOdometry(const ros::Time& t)
+{
+	if(gUseOdometry)
+	{
+		try
+		{
+			gTransformListener->waitForTransform(gOdometryFrame, gRobotFrame, t, ros::Duration(0.1));
+			if(!gTransformListener->canTransform(gRobotFrame, gOdometryFrame, t))
+				return false;
+		}catch(tf2::TransformException &e)
+		{
+			ROS_WARN("Waiting for transform: '%s' => '%s' to become available...", gOdometryFrame.c_str(), gRobotFrame.c_str());
+			return false;
+		}
+	}
+	return true;
+}
+
+void receiveGPS(const sensor_msgs::NavSatFix::ConstPtr& gps)
+{
+	// Get the pose of the laser scanner
+	tf::StampedTransform gps_pose;
+	try
+	{
+		gTransformListener->waitForTransform(gRobotFrame, gGpsFrame, gps->header.stamp, ros::Duration(0.1));
+		gTransformListener->lookupTransform(gRobotFrame, gGpsFrame, gps->header.stamp, gps_pose);
+	}catch(tf2::TransformException &e)
+	{
+		ROS_WARN("Could not get transform: '%s' => '%s'!", gRobotFrame.c_str(), gGpsFrame.c_str());
+		return;
+	}
+	
+	if(!checkOdometry(gps->header.stamp))
+		return;
+	
+	Position pos = gGpsSensor->toUTM(gps->longitude, gps->latitude, gps->altitude);
+	Covariance<3> cov = Covariance<3>::Identity();
+	timeval t = fromRosTime(gps->header.stamp);
+	GpsMeasurement::Ptr m(new GpsMeasurement(pos, cov, t, gRobotName, gGpsName, tf2eigen(gps_pose)));
+//	try
+//	{
+		gGpsSensor->addMeasurement(m);
+//	}catch(std::exception &e)
+//	{
+//		ROS_ERROR("Could not add new gps measurement: %s", e.what());
+//		return;
+//	}
+//	gGraphPublisher->publishGraph(gps->header.stamp, gMapFrame);
+	gGpsPublisher->publishPoints(gGpsName, gMapFrame);
+}
 
 void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 {
@@ -68,6 +129,9 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 		return;
 	}
 
+	if(!checkOdometry(t))
+		return;
+
 	slam3d::PointCloud::Ptr cloud;
 	if(gScanResolution > 0)
 	{
@@ -84,7 +148,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	{
 		if(gUseOdometry)
 		{
-			added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()));
+			added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()), false);
 		}else
 		{
 			added = gPclSensor->addMeasurement(m);
@@ -127,6 +191,8 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	
 	// Show the graph in RVIZ
 	gGraphPublisher->publishGraph(t, gMapFrame);
+//	tf::StampedTransform gps_origin(eigen2tf(gGpsSensor->getOrigin()), t, gMapFrame, "gps");
+//	gTransformBroadcaster->sendTransform(gps_origin);
 }
 
 bool optimize(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
@@ -136,14 +202,21 @@ bool optimize(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 	return true;
 }
 
-bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
+void build_map(VertexObjectList vertices)
 {
-	// Get the accumulated point cloud
-	PointCloud::Ptr accu = gPclSensor->getAccumulatedCloud(gGraph->getVerticesFromSensor(gPclSensor->getName()));
+	PointCloud::Ptr accu = gPclSensor->getAccumulatedCloud(vertices);
 	PointCloud::Ptr cleaned = gPclSensor->removeOutliers(accu, gMapOutlierRadius, gMapOutlierNeighbors);
 	PointCloud::Ptr downsampled = gPclSensor->downsample(cleaned, gMapResolution);
 	downsampled->header.frame_id = gMapFrame;
 	gMapPublisher->publish(downsampled);
+}
+
+bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
+{
+	// Get the accumulated point cloud
+	VertexObjectList vertices = gGraph->getVerticesFromSensor(gPclSensor->getName());
+	std::thread t(build_map, vertices);
+	t.detach();
 	return true;
 }
 
@@ -169,19 +242,30 @@ int main(int argc, char **argv)
 	gGraph = new slam3d::BoostGraph(logger);
 	gMapper = new slam3d::Mapper(gGraph, logger);
 	gSolver = new slam3d::G2oSolver(logger);
-	gGraph->setSolver(gSolver);
+
+	int rate;
+	n.param("optimization_rate", rate, 10);
+	gGraph->setSolver(gSolver, rate);
 	
 	n.param("robot_name", gRobotName, std::string("Robot"));
 	n.param("odometry_frame", gOdometryFrame, std::string("odometry"));
 	n.param("robot_frame", gRobotFrame, std::string("robot"));
 	n.param("map_frame", gMapFrame, std::string("map"));
-	n.param("laser_frame", gLaserFrame, std::string("velodyne_laser"));
+	n.param("laser_frame", gLaserFrame, std::string("laser"));
+	n.param("gps_frame", gGpsFrame, std::string("gps"));
 
 	// Apply tf-prefix to all frames
 	gRobotFrame = gTransformListener->resolve(gRobotFrame);
 	gOdometryFrame = gTransformListener->resolve(gOdometryFrame);
 	gMapFrame = gTransformListener->resolve(gMapFrame);
 	gLaserFrame = gTransformListener->resolve(gLaserFrame);
+	gGpsFrame = gTransformListener->resolve(gGpsFrame);
+	
+	// Create GpsSensor
+	n.param("gps_name", gGpsName, std::string("GpsSensor"));
+	gGpsSensor = new slam3d::GpsSensor(gGpsName, logger);
+	gGpsSensor->initCoordTransform();
+	gMapper->registerSensor(gGpsSensor);
 	
 	// Create the PointCloudSensor for the velodyne laser
 	n.param("sensor_name", gSensorName, std::string("PointCloudSensor"));
@@ -216,6 +300,10 @@ int main(int argc, char **argv)
 	n.param("icp_coarse/transformation_epsilon", gicp_conf.transformation_epsilon, gicp_conf.transformation_epsilon);
 	gPclSensor->setCoarseConfiguaration(gicp_conf);
 
+	int loop_len;
+	n.param("min_loop_length", loop_len, 1);
+	gPclSensor->setMinLoopLength(loop_len);
+
 	gMapper->registerSensor(gPclSensor);
 	
 	double radius, translation, rotation;
@@ -236,6 +324,9 @@ int main(int argc, char **argv)
 	gPclSensor->setMinPoseDistance(translation, rotation);
 	gPclSensor->setPatchBuildingRange(range);
 
+	gPatchSolver = new slam3d::G2oSolver(logger);
+	gPclSensor->setPatchSolver(gPatchSolver);
+
 	if(gUseOdometry)
 	{
 		bool add_edges, use_heading;
@@ -252,6 +343,7 @@ int main(int argc, char **argv)
 	// Subscribe to point cloud
 	ros::Publisher pclPub = n.advertise<slam3d::PointCloud>("map", 1);
 	ros::Subscriber pclSub = n.subscribe<slam3d::PointCloud>("pointcloud", 10, &receivePointCloud);
+	ros::Subscriber gpsSub = n.subscribe<sensor_msgs::NavSatFix>("gps", 10, &receiveGPS);
 	ros::ServiceServer optSrv = n.advertiseService("optimize", &optimize);
 	ros::ServiceServer showSrv = n.advertiseService("show_map", &show_map);
 	ros::ServiceServer writeSrv = n.advertiseService("write_graph", &write_graph);
@@ -262,8 +354,12 @@ int main(int argc, char **argv)
 	gShowMapService = &showSrv;
 	gWriteGraphService = &writeSrv;
 	gSignalPublisher = &signalPub;
+
 	gGraphPublisher = new GraphPublisher(gGraph);
 	gGraphPublisher->addSensor(gSensorName, 0,1,0);
+	gGraphPublisher->addSensor(gGpsName, 1,1,0);
+
+	gGpsPublisher = new GpsPublisher(gGraph);
 
 	ROS_INFO("Mapper ready!");
 	
@@ -271,8 +367,10 @@ int main(int argc, char **argv)
 	
 	delete gGraph;
 	delete gGraphPublisher;
+	delete gGpsPublisher;
 	delete gPclSensor;
 	delete gSolver;
+	delete gPatchSolver;
 	delete logger;
 	delete clock;
 	delete gTransformBroadcaster;

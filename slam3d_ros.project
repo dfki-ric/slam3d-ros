@@ -97,6 +97,8 @@
     <File Name="src/mapper2d_node.cpp"/>
     <File Name="src/GraphPublisher.hpp"/>
     <File Name="src/GraphPublisher.cpp"/>
+    <File Name="src/GpsPublisher.hpp"/>
+    <File Name="src/GpsPublisher.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="build">
     <File Name="CMakeLists.txt"/>
@@ -113,5 +115,6 @@
     <File Name="param/mia_mapper.yaml"/>
     <File Name="param/one_loop.yaml"/>
     <File Name="param/one_loop_mapper2d.yaml"/>
+    <File Name="param/mia_oval_track.yaml"/>
   </VirtualDirectory>
 </CodeLite_Project>
