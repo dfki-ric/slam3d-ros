@@ -12,11 +12,11 @@ optimization_rate: 0
 multi_threaded: true
 
 use_odometry: true
-add_odometry_edges: false
+add_odometry_edges: true
 use_odometry_heading: false
 
 robot_name: "Mia"
-odometry_frame: "odom"
+odometry_frame: "ekf_world"
 robot_frame: "base_link"
 map_frame: "map"
 laser_frame: "velodyne"

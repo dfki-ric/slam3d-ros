@@ -1,11 +1,11 @@
 <launch>
 	<param name="use_sim_time" value="true" />
+	<include file="$(find slam3d_ros)/launch/ekf.launch" />
+
 
 	<node name="MiaOdometry" pkg="ros_mia_odometry" type="ros_mia_odometry_node" />
 
-	<!-- Crop-Box Filter -->
-	 <node name="NodeletManager" pkg="nodelet" type="nodelet" args="manager" />
-
+	<node name="NodeletManager" pkg="nodelet" type="nodelet" args="manager" />
 	<node name="CropBox" pkg="nodelet" type="nodelet" args="load pcl/CropBox NodeletManager">
 		<remap from="~input" to="velodyne/velodyne_points" />
 		<remap from="~output" to="filtered_points" />
@@ -17,12 +17,24 @@
 		<param name="max_z" value="2.0" />
 		<param name="negative" value="true" />
 	</node>
-
+<!--
 	<node name="NavSat" pkg="nmea_navsat_driver" type="nmea_topic_driver" >
 		<remap from="nmea_sentence" to="/velodyne/gps_imu/driver_node/nmea_sentence" />
 		<param name="useRMC" value="true" />
 	</node>
 
+	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="EKF">
+		<remap from="imu_data" to="/xsens/mt0/imu/data" />
+	
+		<param name="output_frame" value="ekf"/>
+		<param name="freq" value="30.0"/>
+		<param name="sensor_timeout" value="1.0"/>
+		<param name="odom_used" value="true"/>
+		<param name="imu_used" value="true"/>
+		<param name="vo_used" value="false"/>
+		<param name="debug" value="false"/>
+		<param name="self_diagnose" value="false"/>
+	</node>
 
 	<node ns="/xsens/mt0" name="Filter" pkg="imu_complementary_filter" type="complementary_filter_node" >
 		<remap from="imu/data_raw" to="imu/data" />
@@ -31,12 +43,11 @@
 		<param name="publish_tf" value="true" />
 		<param name="fixed_frame" value="map" />
 	</node>
-
-	<!-- Mapper -->
+-->
 	<rosparam file="$(find slam3d_ros)/param/mia_oval_track.yaml"/>
 	<node name="Mapper" pkg="slam3d_ros" type="mapper_node" >
 		<remap from="pointcloud" to="filtered_points" />
-		<remap from="gps" to="/xsens/mt0/fix" />
+		<remap from="gps" to="/xsens/mt0/fix_void" />
 	</node>
 
 	<!-- RVIZ to view the visualization -->

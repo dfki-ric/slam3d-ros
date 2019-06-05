@@ -61,7 +61,7 @@ Visualization Manager:
       Size (Pixels): 1
       Size (m): 0.05000000074505806
       Style: Points
-      Topic: /filtered_points
+      Topic: /velodyne/velodyne_points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -69,8 +69,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 48.87771224975586
-        Min Value: -7.024851322174072
+        Max Value: 15.208568572998047
+        Min Value: -0.9735679626464844
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -89,7 +89,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 1
-      Size (m): 0.5
+      Size (m): 0.30000001192092896
       Style: Flat Squares
       Topic: /map
       Unreliable: false
@@ -111,6 +111,8 @@ Visualization Manager:
           Value: false
         delphi_srr_right:
           Value: false
+        ekf_world:
+          Value: true
         hokuyo_rear:
           Value: false
         ibeo_scala_b3:
@@ -122,7 +124,7 @@ Visualization Manager:
         mobileye:
           Value: false
         odom:
-          Value: false
+          Value: true
         usboard_ultrasonic1:
           Value: false
         usboard_ultrasonic10:
@@ -170,63 +172,64 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          odom:
-            base_link:
-              delphi_esr:
-                {}
-              delphi_srr_left:
-                {}
-              delphi_srr_right:
-                {}
-              hokuyo_rear:
-                {}
-              ibeo_scala_b3:
-                {}
-              mesh:
-                {}
-              mobileye:
-                camera:
+          ekf_world:
+            odom:
+              base_link:
+                delphi_esr:
                   {}
-              usboard_ultrasonic1:
-                {}
-              usboard_ultrasonic10:
-                {}
-              usboard_ultrasonic11:
-                {}
-              usboard_ultrasonic12:
-                {}
-              usboard_ultrasonic13:
-                {}
-              usboard_ultrasonic14:
-                {}
-              usboard_ultrasonic15:
-                {}
-              usboard_ultrasonic16:
-                {}
-              usboard_ultrasonic2:
-                {}
-              usboard_ultrasonic3:
-                {}
-              usboard_ultrasonic4:
-                {}
-              usboard_ultrasonic5:
-                {}
-              usboard_ultrasonic6:
-                {}
-              usboard_ultrasonic7:
-                {}
-              usboard_ultrasonic8:
-                {}
-              usboard_ultrasonic9:
-                {}
-              velodyne:
-                {}
-              velodyne_gps:
-                {}
-              xsens_mt1:
-                {}
-          xsens_mt0:
-            {}
+                delphi_srr_left:
+                  {}
+                delphi_srr_right:
+                  {}
+                hokuyo_rear:
+                  {}
+                ibeo_scala_b3:
+                  {}
+                mesh:
+                  {}
+                mobileye:
+                  camera:
+                    {}
+                usboard_ultrasonic1:
+                  {}
+                usboard_ultrasonic10:
+                  {}
+                usboard_ultrasonic11:
+                  {}
+                usboard_ultrasonic12:
+                  {}
+                usboard_ultrasonic13:
+                  {}
+                usboard_ultrasonic14:
+                  {}
+                usboard_ultrasonic15:
+                  {}
+                usboard_ultrasonic16:
+                  {}
+                usboard_ultrasonic2:
+                  {}
+                usboard_ultrasonic3:
+                  {}
+                usboard_ultrasonic4:
+                  {}
+                usboard_ultrasonic5:
+                  {}
+                usboard_ultrasonic6:
+                  {}
+                usboard_ultrasonic7:
+                  {}
+                usboard_ultrasonic8:
+                  {}
+                usboard_ultrasonic9:
+                  {}
+                velodyne:
+                  {}
+                velodyne_gps:
+                  {}
+                xsens_mt0:
+                  {}
+                xsens_mt1:
+                  {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
@@ -340,11 +343,41 @@ Visualization Manager:
       Value: false
       fixed_frame_orientation: true
     - Class: rviz/Axes
-      Enabled: true
+      Enabled: false
       Length: 50
       Name: IMU-Orientation
       Radius: 5
       Reference Frame: xsens_mt0
+      Value: false
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: PoseWithCovariance
+      Shaft Length: 5
+      Shaft Radius: 1
+      Shape: Arrow
+      Topic: /EKF/odom_combined
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
@@ -373,26 +406,26 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/Orbit
-      Distance: 908.971435546875
+      Class: rviz/XYOrbit
+      Distance: 583.4005126953125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 121.33587646484375
-        Y: -238.3661651611328
-        Z: -18.575429916381836
+        X: 77.44308471679688
+        Y: 61.417213439941406
+        Z: 1.194874039356364e-5
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6603984832763672
+      Pitch: 1.2947965860366821
       Target Frame: <Fixed Frame>
-      Value: Orbit (rviz)
-      Yaw: 3.6253979206085205
+      Value: XYOrbit (rviz)
+      Yaw: 1.8554153442382812
     Saved:
       - Class: rviz/XYOrbit
         Distance: 276.3855285644531
