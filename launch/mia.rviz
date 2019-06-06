@@ -7,7 +7,6 @@ Panels:
         - /Global Options1
         - /Map1/Autocompute Value Bounds1
         - /TF1/Frames1
-        - /Imu1/Acceleration properties1
       Splitter Ratio: 0.5272729992866516
     Tree Height: 617
   - Class: rviz/Selection
@@ -111,8 +110,6 @@ Visualization Manager:
           Value: false
         delphi_srr_right:
           Value: false
-        ekf_world:
-          Value: true
         hokuyo_rear:
           Value: false
         ibeo_scala_b3:
@@ -172,64 +169,63 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          ekf_world:
-            odom:
-              base_link:
-                delphi_esr:
+          odom:
+            base_link:
+              delphi_esr:
+                {}
+              delphi_srr_left:
+                {}
+              delphi_srr_right:
+                {}
+              hokuyo_rear:
+                {}
+              ibeo_scala_b3:
+                {}
+              mesh:
+                {}
+              mobileye:
+                camera:
                   {}
-                delphi_srr_left:
-                  {}
-                delphi_srr_right:
-                  {}
-                hokuyo_rear:
-                  {}
-                ibeo_scala_b3:
-                  {}
-                mesh:
-                  {}
-                mobileye:
-                  camera:
-                    {}
-                usboard_ultrasonic1:
-                  {}
-                usboard_ultrasonic10:
-                  {}
-                usboard_ultrasonic11:
-                  {}
-                usboard_ultrasonic12:
-                  {}
-                usboard_ultrasonic13:
-                  {}
-                usboard_ultrasonic14:
-                  {}
-                usboard_ultrasonic15:
-                  {}
-                usboard_ultrasonic16:
-                  {}
-                usboard_ultrasonic2:
-                  {}
-                usboard_ultrasonic3:
-                  {}
-                usboard_ultrasonic4:
-                  {}
-                usboard_ultrasonic5:
-                  {}
-                usboard_ultrasonic6:
-                  {}
-                usboard_ultrasonic7:
-                  {}
-                usboard_ultrasonic8:
-                  {}
-                usboard_ultrasonic9:
-                  {}
-                velodyne:
-                  {}
-                velodyne_gps:
-                  {}
-                xsens_mt0:
-                  {}
-                xsens_mt1:
-                  {}
+              usboard_ultrasonic1:
+                {}
+              usboard_ultrasonic10:
+                {}
+              usboard_ultrasonic11:
+                {}
+              usboard_ultrasonic12:
+                {}
+              usboard_ultrasonic13:
+                {}
+              usboard_ultrasonic14:
+                {}
+              usboard_ultrasonic15:
+                {}
+              usboard_ultrasonic16:
+                {}
+              usboard_ultrasonic2:
+                {}
+              usboard_ultrasonic3:
+                {}
+              usboard_ultrasonic4:
+                {}
+              usboard_ultrasonic5:
+                {}
+              usboard_ultrasonic6:
+                {}
+              usboard_ultrasonic7:
+                {}
+              usboard_ultrasonic8:
+                {}
+              usboard_ultrasonic9:
+                {}
+              velodyne:
+                {}
+              velodyne_gps:
+                {}
+              xsens_mt0:
+                {}
+              xsens_mt1:
+                {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
@@ -296,89 +292,6 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Acceleration properties:
-        Acc. vector alpha: 1
-        Acc. vector color: 255; 0; 0
-        Acc. vector scale: 1
-        Derotate acceleration: true
-        Enable acceleration: false
-      Axes properties:
-        Axes scale: 1
-        Enable axes: false
-      Box properties:
-        Box alpha: 0.5
-        Box color: 255; 0; 0
-        Enable box: true
-        x_scale: 2
-        y_scale: 1
-        z_scale: 0.5
-      Class: rviz_imu_plugin/Imu
-      Enabled: false
-      Name: Imu
-      Topic: /xsens/mt0/imu/data
-      Unreliable: true
-      Value: false
-      fixed_frame_orientation: true
-    - Acceleration properties:
-        Acc. vector alpha: 1
-        Acc. vector color: 115; 210; 22
-        Acc. vector scale: 1
-        Derotate acceleration: true
-        Enable acceleration: false
-      Axes properties:
-        Axes scale: 1
-        Enable axes: false
-      Box properties:
-        Box alpha: 0.5
-        Box color: 115; 210; 22
-        Enable box: true
-        x_scale: 2
-        y_scale: 1
-        z_scale: 0.5
-      Class: rviz_imu_plugin/Imu
-      Enabled: false
-      Name: Imu-Filtered
-      Topic: /xsens/mt0/imu/data_filtered
-      Unreliable: false
-      Value: false
-      fixed_frame_orientation: true
-    - Class: rviz/Axes
-      Enabled: false
-      Length: 50
-      Name: IMU-Orientation
-      Radius: 5
-      Reference Frame: xsens_mt0
-      Value: false
-    - Alpha: 1
-      Axes Length: 1
-      Axes Radius: 0.10000000149011612
-      Class: rviz/PoseWithCovariance
-      Color: 255; 25; 0
-      Covariance:
-        Orientation:
-          Alpha: 0.5
-          Color: 255; 255; 127
-          Color Style: Unique
-          Frame: Local
-          Offset: 1
-          Scale: 1
-          Value: true
-        Position:
-          Alpha: 0.30000001192092896
-          Color: 204; 51; 204
-          Scale: 1
-          Value: true
-        Value: true
-      Enabled: true
-      Head Length: 0.30000001192092896
-      Head Radius: 0.10000000149011612
-      Name: PoseWithCovariance
-      Shaft Length: 5
-      Shaft Radius: 1
-      Shape: Arrow
-      Topic: /EKF/odom_combined
-      Unreliable: false
-      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -407,25 +320,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 583.4005126953125
+      Distance: 129.17576599121094
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 77.44308471679688
-        Y: 61.417213439941406
-        Z: 1.194874039356364e-5
+        X: -5.757659912109375
+        Y: 16.231142044067383
+        Z: 1.1948741303058341e-5
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2947965860366821
+      Pitch: 1.0497968196868896
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 1.8554153442382812
+      Yaw: 1.9754152297973633
     Saved:
       - Class: rviz/XYOrbit
         Distance: 276.3855285644531

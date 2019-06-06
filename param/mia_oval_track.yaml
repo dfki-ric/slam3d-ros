@@ -16,7 +16,7 @@ add_odometry_edges: true
 use_odometry_heading: false
 
 robot_name: "Mia"
-odometry_frame: "ekf_world"
+odometry_frame: "odom"
 robot_frame: "base_link"
 map_frame: "map"
 laser_frame: "velodyne"

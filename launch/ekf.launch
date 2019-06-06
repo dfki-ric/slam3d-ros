@@ -10,10 +10,10 @@
     print_diagnostics: true
     debug: false
 
-    map_frame: ekf_world
+    map_frame: map
     odom_frame: odom
     base_link_frame: base_link
-    world_frame: ekf_world
+    world_frame: odom
 
     use_control: false
     smooth_lagged_data: false
@@ -82,7 +82,7 @@
     imu0_nodelay: true
     imu0_differential: false
     imu0_relative: false
-    imu0_remove_gravitational_acceleration: true
+    imu0_remove_gravitational_acceleration: false
     </rosparam>
 
     <rosparam>
@@ -96,7 +96,7 @@
     imu1_nodelay: true
     imu1_differential: true
     imu1_relative: false
-    imu1_remove_gravitational_acceleration: true
+    imu1_remove_gravitational_acceleration: false
     </rosparam>
 
   </node>

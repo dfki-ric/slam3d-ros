@@ -3,7 +3,9 @@
 	<include file="$(find slam3d_ros)/launch/ekf.launch" />
 
 
-	<node name="MiaOdometry" pkg="ros_mia_odometry" type="ros_mia_odometry_node" />
+	<node name="MiaOdometry" pkg="ros_mia_odometry" type="ros_mia_odometry_node">
+		<param name="publish_tf" value="false" />
+	</node>
 
 	<node name="NodeletManager" pkg="nodelet" type="nodelet" args="manager" />
 	<node name="CropBox" pkg="nodelet" type="nodelet" args="load pcl/CropBox NodeletManager">
