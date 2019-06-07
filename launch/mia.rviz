@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /PointCloud21
         - /Map1/Autocompute Value Bounds1
         - /TF1/Frames1
         - /Odometry1/Shape1
@@ -47,7 +48,7 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 252; 175; 62
+      Color: 238; 238; 236
       Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
@@ -63,7 +64,7 @@ Visualization Manager:
       Size (Pixels): 1
       Size (m): 0.05000000074505806
       Style: Squares
-      Topic: /velodyne/velodyne_points
+      Topic: /filtered_points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -71,8 +72,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 14.30327033996582
-        Min Value: -3.7334537506103516
+        Max Value: 12.727170944213867
+        Min Value: -1.1229215860366821
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -261,25 +262,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 189.73619079589844
+      Distance: 86.14250183105469
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -21.15790557861328
-        Y: -95.78852844238281
-        Z: -1.9681806406879332e-7
+        X: 7.33516263961792
+        Y: -16.32440948486328
+        Z: -2.1041669242549688e-6
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5147968530654907
+      Pitch: 0.8697975873947144
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.82359504699707
+      Yaw: 4.898594856262207
     Saved:
       - Class: rviz/XYOrbit
         Distance: 276.3855285644531

@@ -19,6 +19,7 @@
 #include "GraphPublisher.hpp"
 #include "GpsPublisher.hpp"
 #include "ros_common.hpp"
+#include "ros_tf.hpp"
 
 tf::TransformBroadcaster* gTransformBroadcaster;
 tf::TransformListener* gTransformListener;
@@ -39,8 +40,9 @@ slam3d::GpsSensor* gGpsSensor;
 slam3d::G2oSolver* gSolver;
 slam3d::G2oSolver* gPatchSolver;
 
-RosTfOdometry* gOdometry;
 tf::StampedTransform gOdomInMap;
+Odometry* gOdometry;
+IMU* gIMU;
 
 int gCount;
 double gMapResolution;
@@ -329,15 +331,17 @@ int main(int argc, char **argv)
 
 	if(gUseOdometry)
 	{
-		bool add_edges, use_heading;
-		n.param("add_odometry_edges", add_edges, false);
-		n.param("use_odometry_heading", use_heading, false);
-
-		gOdometry = new RosTfOdometry(gGraph, logger, n);
+		gOdometry = new Odometry(gGraph, logger);
+		gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
 		gMapper->registerPoseSensor(gOdometry);
+		
+		gIMU = new IMU(gGraph, logger);
+		gIMU->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
+		gMapper->registerPoseSensor(gIMU);
 	}else
 	{
 		gOdometry = NULL;
+		gIMU = NULL;
 	}
 
 	// Subscribe to point cloud

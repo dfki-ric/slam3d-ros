@@ -39,7 +39,12 @@ target_include_directories(visualization PRIVATE ${catkin_INCLUDE_DIRS})
 target_link_libraries(visualization PUBLIC slam3d::core ${catkin_LIBRARIES})
 
 # 3D-Mapper
-add_executable(mapper_node src/mapper_node.cpp)
+add_executable(mapper_node
+  src/mapper_node.cpp
+  src/ros_common.cpp
+  src/ros_tf.cpp
+)
+
 target_include_directories(mapper_node PRIVATE ${catkin_INCLUDE_DIRS})
 target_link_libraries(mapper_node PUBLIC
   slam3d::core
@@ -52,17 +57,17 @@ target_link_libraries(mapper_node PUBLIC
 )
 
 # 2D-Mapper
-add_executable(mapper2d_node src/mapper2d_node.cpp)
-target_include_directories(mapper2d_node PRIVATE ${catkin_INCLUDE_DIRS})
-target_link_libraries(mapper2d_node PUBLIC
-  slam3d::core
-  slam3d::graph-boost
-  slam3d::sensor-pcl
-  slam3d::sensor-pointmatcher
-  slam3d::solver-g2o
-  visualization
-  ${catkin_LIBRARIES}
-)
+#add_executable(mapper2d_node src/mapper2d_node.cpp)
+#target_include_directories(mapper2d_node PRIVATE ${catkin_INCLUDE_DIRS})
+#target_link_libraries(mapper2d_node PUBLIC
+#  slam3d::core
+#  slam3d::graph-boost
+#  slam3d::sensor-pcl
+#  slam3d::sensor-pointmatcher
+#  slam3d::solver-g2o
+#  visualization
+#  ${catkin_LIBRARIES}
+#)
 
 # Velodyne Publisher
 add_executable(velodyne_publisher src/velodyne_publisher.cpp)
