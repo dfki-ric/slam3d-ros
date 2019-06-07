@@ -1,12 +1,12 @@
 <launch>
-  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_se_odom" clear_params="true">
+  <node pkg="robot_localization" type="ukf_localization_node" name="ekf_se_odom" clear_params="true">
     <rosparam>
     frequency: 30
     sensor_timeout: 0.1
     two_d_mode: false
     transform_time_offset: 0.0
     transform_timeout: 0.0
-    #publish_tf: false
+    publish_tf: true
     print_diagnostics: true
     debug: false
 
@@ -82,7 +82,7 @@
     imu0_nodelay: true
     imu0_differential: false
     imu0_relative: false
-    imu0_remove_gravitational_acceleration: false
+    imu0_remove_gravitational_acceleration: true
     </rosparam>
 
     <rosparam>
@@ -96,7 +96,7 @@
     imu1_nodelay: true
     imu1_differential: true
     imu1_relative: false
-    imu1_remove_gravitational_acceleration: false
+    imu1_remove_gravitational_acceleration: true
     </rosparam>
 
   </node>

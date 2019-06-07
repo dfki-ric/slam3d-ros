@@ -148,7 +148,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	{
 		if(gUseOdometry)
 		{
-			added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()), false);
+			added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()), true);
 		}else
 		{
 			added = gPclSensor->addMeasurement(m);

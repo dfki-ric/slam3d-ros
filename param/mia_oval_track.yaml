@@ -8,7 +8,7 @@ map_outlier_radius: 0.3
 map_outlier_neighbors: 5
 min_translation: 2.0
 min_rotation: 2.0
-optimization_rate: 0
+optimization_rate: 10
 multi_threaded: true
 
 use_odometry: true

@@ -99,6 +99,8 @@
     <File Name="src/GraphPublisher.cpp"/>
     <File Name="src/GpsPublisher.hpp"/>
     <File Name="src/GpsPublisher.cpp"/>
+    <File Name="src/RosIMU.hpp"/>
+    <File Name="src/RosIMU.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="build">
     <File Name="CMakeLists.txt"/>
@@ -109,6 +111,8 @@
     <File Name="launch/mia.launch"/>
     <File Name="launch/one_loop.launch"/>
     <File Name="launch/one_loop_2d.launch"/>
+    <File Name="launch/ekf.launch"/>
+    <File Name="launch/gps.launch"/>
   </VirtualDirectory>
   <VirtualDirectory Name="param">
     <File Name="param/kitti_mapper.yaml"/>
