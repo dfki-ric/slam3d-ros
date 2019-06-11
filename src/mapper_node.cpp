@@ -61,6 +61,8 @@ std::string gMapFrame;
 std::string gLaserFrame;
 std::string gGpsFrame;
 
+ros::Time gLastTime;
+
 bool checkOdometry(const ros::Time& t)
 {
 	if(gUseOdometry)
@@ -81,11 +83,17 @@ bool checkOdometry(const ros::Time& t)
 
 void receiveGPS(const sensor_msgs::NavSatFix::ConstPtr& gps)
 {
+	if(gps->header.stamp < gLastTime)
+	{
+		ROS_WARN("Received late GPS sample!");
+	}
+	gLastTime = gps->header.stamp;
+	
 	// Get the pose of the laser scanner
 	tf::StampedTransform gps_pose;
 	try
 	{
-		gTransformListener->waitForTransform(gRobotFrame, gGpsFrame, gps->header.stamp, ros::Duration(0.1));
+		gTransformListener->waitForTransform(gRobotFrame, gGpsFrame, gps->header.stamp, ros::Duration(0.01));
 		gTransformListener->lookupTransform(gRobotFrame, gGpsFrame, gps->header.stamp, gps_pose);
 	}catch(tf2::TransformException &e)
 	{
@@ -97,7 +105,7 @@ void receiveGPS(const sensor_msgs::NavSatFix::ConstPtr& gps)
 		return;
 	
 	Position pos = gGpsSensor->toUTM(gps->longitude, gps->latitude, gps->altitude);
-	Covariance<3> cov = Covariance<3>::Identity();
+	Covariance<3> cov = Covariance<3>::Identity(); //TODO: Read covariance from message
 	timeval t = fromRosTime(gps->header.stamp);
 	GpsMeasurement::Ptr m(new GpsMeasurement(pos, cov, t, gRobotName, gGpsName, tf2eigen(gps_pose)));
 //	try
@@ -120,6 +128,13 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	// Get the pose of the laser scanner
 	ros::Time t;
 	t.fromNSec(pcl->header.stamp * 1000);
+	
+	if(t < gLastTime)
+	{
+		ROS_WARN("Received late Scan!");
+	}
+	gLastTime = t;
+	
 	tf::StampedTransform laser_pose;
 	try
 	{
@@ -155,7 +170,6 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 		{
 			added = gPclSensor->addMeasurement(m);
 		}
-		gPclSensor->linkLastToNeighbors(true);
 	}catch(std::exception &e)
 	{
 		ROS_ERROR("Could not add new measurement: %s", e.what());
@@ -193,6 +207,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	
 	// Show the graph in RVIZ
 	gGraphPublisher->publishGraph(t, gMapFrame);
+//	gPclSensor->linkLastToNeighbors(true);
 //	tf::StampedTransform gps_origin(eigen2tf(gGpsSensor->getOrigin()), t, gMapFrame, "gps");
 //	gTransformBroadcaster->sendTransform(gps_origin);
 }
@@ -234,6 +249,7 @@ int main(int argc, char **argv)
 	ros::NodeHandle n;
 	
 	gCount = 0;
+	gLastTime = ros::Time(0);
 	
 	gTransformBroadcaster = new tf::TransformBroadcaster;
 	gTransformListener = new tf::TransformListener();
@@ -360,8 +376,10 @@ int main(int argc, char **argv)
 	gSignalPublisher = &signalPub;
 
 	gGraphPublisher = new GraphPublisher(gGraph);
-	gGraphPublisher->addSensor(gSensorName, 0,1,0);
-	gGraphPublisher->addSensor(gGpsName, 1,1,0);
+	gGraphPublisher->addNodeSensor(gSensorName, 0,1,0);
+	gGraphPublisher->addNodeSensor(gGpsName, 1,1,0);
+	gGraphPublisher->addEdgeSensor(gSensorName);
+	gGraphPublisher->addEdgeSensor(gOdometry->getName());
 
 	gGpsPublisher = new GpsPublisher(gGraph);
 

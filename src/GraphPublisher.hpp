@@ -20,15 +20,17 @@ public:
 	GraphPublisher(slam3d::Graph* g);
 	~GraphPublisher();
 	
-	void addSensor(const std::string& sensor, double r, double g, double b);
+	void addNodeSensor(const std::string& sensor, double r, double g, double b);
+	void addEdgeSensor(const std::string& sensor);
 	
-	void publishNodes(const ros::Time& stamp, const std::string& frame);
-	void publishEdges(const ros::Time& stamp, const std::string& frame);
 	void publishGraph(const ros::Time& stamp, const std::string& frame);
+	void publishNodes(const ros::Time& stamp, const std::string& frame);
+	void publishEdges(const std::string& sensor, const ros::Time& stamp, const std::string& frame);
 	
 private:
 	slam3d::Graph* mGraph;
 	std::map<std::string, Color> mSensorMap;
 	ros::Publisher mPosePublisher;
-	ros::Publisher mEdgePublisher;
+	std::map<std::string, ros::Publisher> mEdgePublisherMap;
+	ros::NodeHandle mNode;
 };

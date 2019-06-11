@@ -7,9 +7,7 @@ using namespace slam3d;
 
 GraphPublisher::GraphPublisher(slam3d::Graph* g) : mGraph(g)
 {
-	ros::NodeHandle n;
-	mPosePublisher = n.advertise<visualization_msgs::Marker>("vertices", 1, true);
-	mEdgePublisher = n.advertise<visualization_msgs::Marker>("edges", 1, true);
+	mPosePublisher = mNode.advertise<visualization_msgs::Marker>("vertices", 1, true);
 }
 
 GraphPublisher::~GraphPublisher()
@@ -17,13 +15,20 @@ GraphPublisher::~GraphPublisher()
 	
 }
 
-void GraphPublisher::addSensor(const std::string& sensor, double r, double g, double b)
+void GraphPublisher::addNodeSensor(const std::string& sensor, double r, double g, double b)
 {
 	Color color;
 	color.r = r;
 	color.g = g;
 	color.b = b;
-	mSensorMap.insert(std::pair<std::string, Color>(sensor, color));
+	mSensorMap[sensor] = color;
+}
+
+void GraphPublisher::addEdgeSensor(const std::string& sensor)
+{
+	std::stringstream name;
+	name << "edges" << sensor;
+	mEdgePublisherMap[sensor] = mNode.advertise<visualization_msgs::Marker>(name.str(), 1, true);
 }
 
 void GraphPublisher::publishNodes(const ros::Time& stamp, const std::string& frame)
@@ -78,9 +83,9 @@ void GraphPublisher::publishNodes(const ros::Time& stamp, const std::string& fra
 	mPosePublisher.publish(marker);
 }
 
-void GraphPublisher::publishEdges(const ros::Time& stamp, const std::string& frame)
+void GraphPublisher::publishEdges(const std::string& sensor, const ros::Time& stamp, const std::string& frame)
 {
-	slam3d::EdgeObjectList edges = mGraph->getEdgesFromSensor("");
+	slam3d::EdgeObjectList edges = mGraph->getEdgesFromSensor(sensor);
 
 	visualization_msgs::Marker marker;
 	marker.header.frame_id = frame;
@@ -142,11 +147,14 @@ void GraphPublisher::publishEdges(const ros::Time& stamp, const std::string& fra
 		marker.colors[(2*i)+1] = marker.colors[2*i];
 		i++;
 	}
-	mEdgePublisher.publish(marker);
+	mEdgePublisherMap[sensor].publish(marker);
 }
 
 void GraphPublisher::publishGraph(const ros::Time& stamp, const std::string& frame)
 {
 	publishNodes(stamp, frame);
-	publishEdges(stamp, frame);
+	for(auto e = mEdgePublisherMap.begin(); e != mEdgePublisherMap.end(); e++)
+	{
+		publishEdges(e->first, stamp, frame);
+	}
 }

@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /PointCloud21
         - /Map1/Autocompute Value Bounds1
         - /TF1/Frames1
         - /Odometry1/Shape1
@@ -72,8 +71,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 12.727170944213867
-        Min Value: -1.1229215860366821
+        Max Value: 16.64160919189453
+        Min Value: -3.677377223968506
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -141,8 +140,16 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /edges
-      Name: Edges
+      Marker Topic: /edgesOdometry
+      Name: EdgesOdometry
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /edgesPointCloudSensor
+      Name: EdgesPCL
       Namespaces:
         "": true
       Queue Size: 100
@@ -262,25 +269,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 86.14250183105469
+      Distance: 61.30393600463867
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 7.33516263961792
-        Y: -16.32440948486328
-        Z: -2.1041669242549688e-6
+        X: 0
+        Y: 0
+        Z: 0
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8697975873947144
+      Pitch: 0.6897972822189331
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.898594856262207
+      Yaw: 4.893579959869385
     Saved:
       - Class: rviz/XYOrbit
         Distance: 276.3855285644531
