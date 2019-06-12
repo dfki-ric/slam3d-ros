@@ -206,7 +206,11 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	}
 	
 	// Show the graph in RVIZ
-	gGraphPublisher->publishGraph(t, gMapFrame);
+	gGraphPublisher->publishNodes(t, gMapFrame);
+	gGraphPublisher->publishEdges(gOdometry->getName(), t, gMapFrame);
+	gGraphPublisher->publishEdges(gSensorName, t, gMapFrame);
+	gGraphPublisher->publishPoseEdges(gGpsName, t, gMapFrame);
+
 //	gPclSensor->linkLastToNeighbors(true);
 //	tf::StampedTransform gps_origin(eigen2tf(gGpsSensor->getOrigin()), t, gMapFrame, "gps");
 //	gTransformBroadcaster->sendTransform(gps_origin);
@@ -351,9 +355,9 @@ int main(int argc, char **argv)
 		gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
 		gMapper->registerPoseSensor(gOdometry);
 		
-		gIMU = new IMU(gGraph, logger);
-		gIMU->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
-		gMapper->registerPoseSensor(gIMU);
+//		gIMU = new IMU(gGraph, logger);
+//		gIMU->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
+//		gMapper->registerPoseSensor(gIMU);
 	}else
 	{
 		gOdometry = NULL;
@@ -380,6 +384,7 @@ int main(int argc, char **argv)
 	gGraphPublisher->addNodeSensor(gGpsName, 1,1,0);
 	gGraphPublisher->addEdgeSensor(gSensorName);
 	gGraphPublisher->addEdgeSensor(gOdometry->getName());
+	gGraphPublisher->addEdgeSensor(gGpsName);
 
 	gGpsPublisher = new GpsPublisher(gGraph);
 

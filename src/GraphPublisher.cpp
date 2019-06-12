@@ -150,11 +150,51 @@ void GraphPublisher::publishEdges(const std::string& sensor, const ros::Time& st
 	mEdgePublisherMap[sensor].publish(marker);
 }
 
-void GraphPublisher::publishGraph(const ros::Time& stamp, const std::string& frame)
+void GraphPublisher::publishPoseEdges(const std::string& sensor, const ros::Time& stamp, const std::string& frame)
 {
-	publishNodes(stamp, frame);
-	for(auto e = mEdgePublisherMap.begin(); e != mEdgePublisherMap.end(); e++)
+	slam3d::EdgeObjectList edges = mGraph->getEdgesFromSensor(sensor);
+
+	visualization_msgs::Marker marker;
+	marker.header.frame_id = frame;
+	marker.header.stamp = stamp;
+	marker.id = 0;
+	marker.type = visualization_msgs::Marker::LINE_LIST;
+	
+	marker.pose.position.x = 0;
+	marker.pose.position.y = 0;
+	marker.pose.position.z = 0;
+	marker.pose.orientation.x = 0.0;
+	marker.pose.orientation.y = 0.0;
+	marker.pose.orientation.z = 0.0;
+	marker.pose.orientation.w = 1.0;
+	marker.scale.x = 0.02;
+	marker.scale.y = 0.2;
+	marker.scale.z = 0.2;
+	marker.color.a = 1.0;
+	marker.color.r = 0.3;
+	marker.color.g = 0.3;
+	marker.color.b = 1.0;
+	marker.points.resize(edges.size() * 2);
+	
+	unsigned i = 0;
+	for(EdgeObjectList::const_iterator edge = edges.begin(); edge != edges.end(); ++edge)
 	{
-		publishEdges(e->first, stamp, frame);
+		if(edge->constraint->getType() != POSITION)
+			continue;
+
+		const VertexObject& source_obj = mGraph->getVertex(edge->source);
+		Transform::ConstTranslationPart source_pose = source_obj.corrected_pose.translation();
+		marker.points[2*i].x = source_pose[0];
+		marker.points[2*i].y = source_pose[1];
+		marker.points[2*i].z = source_pose[2];
+
+		PositionConstraint::Ptr pos = boost::dynamic_pointer_cast<PositionConstraint>(edge->constraint);
+		Position target_pose = pos->getPosition();
+		marker.points[2*i+1].x = target_pose[0];
+		marker.points[2*i+1].y = target_pose[1];
+		marker.points[2*i+1].z = target_pose[2];
+		
+		i++;
 	}
+	mEdgePublisherMap[sensor].publish(marker);
 }

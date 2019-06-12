@@ -72,7 +72,7 @@ void Odometry::handleNewVertex(IdType vertex)
 	{
 		TransformWithCovariance twc;
 		twc.transform = mLastOdometricPose.inverse() * currentPose;
-		twc.covariance = Covariance<6>::Identity() * 100;
+		twc.covariance = Covariance<6>::Identity();
 		SE3Constraint::Ptr se3(new SE3Constraint(mName, twc));
 		mGraph->addConstraint(mLastVertex, vertex, se3);
 		mGraph->setCorrectedPose(vertex, mGraph->getVertex(mLastVertex).corrected_pose * twc.transform);

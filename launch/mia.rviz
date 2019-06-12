@@ -154,6 +154,14 @@ Visualization Manager:
         "": true
       Queue Size: 100
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /edgesGpsSensor
+      Name: EdgesGPS
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -177,7 +185,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.5
+      Size (m): 0.20000000298023224
       Style: Spheres
       Topic: /gps_points
       Unreliable: false
@@ -269,7 +277,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 61.30393600463867
+      Distance: 54.73565673828125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -284,10 +292,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6897972822189331
+      Pitch: 0.4103984534740448
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.893579959869385
+      Yaw: 0.23039856553077698
     Saved:
       - Class: rviz/XYOrbit
         Distance: 276.3855285644531

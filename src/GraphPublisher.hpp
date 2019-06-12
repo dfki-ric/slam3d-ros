@@ -23,9 +23,9 @@ public:
 	void addNodeSensor(const std::string& sensor, double r, double g, double b);
 	void addEdgeSensor(const std::string& sensor);
 	
-	void publishGraph(const ros::Time& stamp, const std::string& frame);
 	void publishNodes(const ros::Time& stamp, const std::string& frame);
 	void publishEdges(const std::string& sensor, const ros::Time& stamp, const std::string& frame);
+	void publishPoseEdges(const std::string& sensor, const ros::Time& stamp, const std::string& frame);
 	
 private:
 	slam3d::Graph* mGraph;
