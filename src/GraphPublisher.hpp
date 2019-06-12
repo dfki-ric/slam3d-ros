@@ -31,6 +31,7 @@ private:
 	slam3d::Graph* mGraph;
 	std::map<std::string, Color> mSensorMap;
 	ros::Publisher mPosePublisher;
+	ros::Publisher mLabelPublisher;
 	std::map<std::string, ros::Publisher> mEdgePublisherMap;
 	ros::NodeHandle mNode;
 };

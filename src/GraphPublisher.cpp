@@ -1,13 +1,16 @@
 #include "GraphPublisher.hpp"
 
 #include <slam3d/core/Graph.hpp>
-#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
+
+#include <boost/format.hpp>
 
 using namespace slam3d;
 
 GraphPublisher::GraphPublisher(slam3d::Graph* g) : mGraph(g)
 {
 	mPosePublisher = mNode.advertise<visualization_msgs::Marker>("vertices", 1, true);
+	mLabelPublisher = mNode.advertise<visualization_msgs::MarkerArray>("labels", 1, true);
 }
 
 GraphPublisher::~GraphPublisher()
@@ -54,6 +57,8 @@ void GraphPublisher::publishNodes(const ros::Time& stamp, const std::string& fra
 	marker.color.g = 1.0;
 	marker.color.b = 0.0;
 	
+	visualization_msgs::MarkerArray labels;
+	
 	slam3d::VertexObjectList vertices;
 	for(auto it = mSensorMap.begin(); it != mSensorMap.end(); it++)
 	{
@@ -63,6 +68,7 @@ void GraphPublisher::publishNodes(const ros::Time& stamp, const std::string& fra
 	
 	marker.points.resize(vertices.size());
 	marker.colors.resize(vertices.size());
+	labels.markers.resize(vertices.size());
 	
 	unsigned i = 0;
 	for(VertexObjectList::const_iterator it = vertices.begin(); it != vertices.end(); it++)
@@ -78,9 +84,28 @@ void GraphPublisher::publishNodes(const ros::Time& stamp, const std::string& fra
 		marker.colors[i].b = c.b;
 		marker.colors[i].a = 1.0;
 		
+		labels.markers[i].header.frame_id = frame;
+		labels.markers[i].header.stamp = stamp;
+		labels.markers[i].pose.position.x = pose.translation()[0];
+		labels.markers[i].pose.position.y = pose.translation()[1];
+		labels.markers[i].pose.position.z = pose.translation()[2] + 0.3;
+		labels.markers[i].pose.orientation.x = 0.0;
+		labels.markers[i].pose.orientation.y = 0.0;
+		labels.markers[i].pose.orientation.z = 0.0;
+		labels.markers[i].pose.orientation.w = 1.0;
+		labels.markers[i].color.a = 1.0;
+		labels.markers[i].color.r = 1.0;
+		labels.markers[i].color.g = 1.0;
+		labels.markers[i].color.b = 1.0;
+		labels.markers[i].scale.z = 0.3;
+		labels.markers[i].type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+		labels.markers[i].text = (boost::format("%1%") % it->index).str();
+		labels.markers[i].id = i;
+		
 		i++;
 	}
 	mPosePublisher.publish(marker);
+	mLabelPublisher.publish(labels);
 }
 
 void GraphPublisher::publishEdges(const std::string& sensor, const ros::Time& stamp, const std::string& frame)

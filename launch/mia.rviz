@@ -249,6 +249,14 @@ Visualization Manager:
       Unreliable: false
       Value: false
       fixed_frame_orientation: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /labels
+      Name: VertexLabels
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -277,7 +285,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 54.73565673828125
+      Distance: 21.987369537353516
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -292,10 +300,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4103984534740448
+      Pitch: 0.49479734897613525
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 0.23039856553077698
+      Yaw: 0.8054015636444092
     Saved:
       - Class: rviz/XYOrbit
         Distance: 276.3855285644531
