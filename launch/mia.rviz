@@ -8,8 +8,6 @@ Panels:
         - /Map1/Autocompute Value Bounds1
         - /TF1/Frames1
         - /Odometry1/Shape1
-        - /Imu1/Box properties1
-        - /Imu1/Axes properties1
       Splitter Ratio: 0.5272729992866516
     Tree Height: 617
   - Class: rviz/Selection
@@ -226,29 +224,6 @@ Visualization Manager:
       Topic: /odometry/gps
       Unreliable: false
       Value: true
-    - Acceleration properties:
-        Acc. vector alpha: 1
-        Acc. vector color: 255; 0; 0
-        Acc. vector scale: 0.10000000149011612
-        Derotate acceleration: true
-        Enable acceleration: true
-      Axes properties:
-        Axes scale: 2
-        Enable axes: true
-      Box properties:
-        Box alpha: 0.5
-        Box color: 255; 0; 0
-        Enable box: true
-        x_scale: 1
-        y_scale: 2
-        z_scale: 0.5
-      Class: rviz_imu_plugin/Imu
-      Enabled: false
-      Name: Imu
-      Topic: /xsens/mt0/imu/data
-      Unreliable: false
-      Value: false
-      fixed_frame_orientation: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /labels
@@ -256,6 +231,15 @@ Visualization Manager:
       Namespaces:
         "": true
       Queue Size: 100
+      Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Name: LoopCloser
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Update Topic: /LoopCloser/update
       Value: true
   Enabled: true
   Global Options:
@@ -285,25 +269,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 21.987369537353516
+      Distance: 11.682149887084961
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: -1.5490117073059082
+        Y: 0.42058300971984863
+        Z: 7.1817180469224695e-6
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.49479734897613525
+      Pitch: 0.4297983646392822
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 0.8054015636444092
+      Yaw: 3.97855544090271
     Saved:
       - Class: rviz/XYOrbit
         Distance: 276.3855285644531

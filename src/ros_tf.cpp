@@ -70,9 +70,14 @@ void Odometry::handleNewVertex(IdType vertex)
 	
 	if(mLastVertex > 0)
 	{
+		Transform t = mLastOdometricPose.inverse() * currentPose;
+		ScalarType rot = Eigen::AngleAxis<ScalarType>(t.rotation()).angle();
+		ScalarType trans = t.translation().norm();
+		ScalarType error = 1.0 + rot + trans; // magic
+
 		TransformWithCovariance twc;
-		twc.transform = mLastOdometricPose.inverse() * currentPose;
-		twc.covariance = Covariance<6>::Identity();
+		twc.transform = t;
+		twc.covariance = Covariance<6>::Identity() * error;
 		SE3Constraint::Ptr se3(new SE3Constraint(mName, twc));
 		mGraph->addConstraint(mLastVertex, vertex, se3);
 		mGraph->setCorrectedPose(vertex, mGraph->getVertex(mLastVertex).corrected_pose * twc.transform);

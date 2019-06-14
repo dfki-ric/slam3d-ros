@@ -5,6 +5,7 @@
 #include <tf_conversions/tf_eigen.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <std_srvs/Empty.h>
+
 #include <boost/uuid/uuid_io.hpp>
 
 #include <slam3d/core/Mapper.hpp>
@@ -18,6 +19,7 @@
 
 #include "GraphPublisher.hpp"
 #include "GpsPublisher.hpp"
+#include "LoopCloser.hpp"
 #include "ros_common.hpp"
 #include "ros_tf.hpp"
 
@@ -31,7 +33,7 @@ ros::ServiceServer* gWriteGraphService;
 ros::Publisher* gSignalPublisher;
 GraphPublisher* gGraphPublisher;
 GpsPublisher* gGpsPublisher;
-
+LoopCloser* gLoopCloser;
 
 slam3d::BoostGraph* gGraph;
 slam3d::Mapper* gMapper;
@@ -165,7 +167,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	{
 		if(gUseOdometry)
 		{
-			added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()), true);
+			added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()), false);
 		}else
 		{
 			added = gPclSensor->addMeasurement(m);
@@ -179,6 +181,11 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	if(current.matrix().determinant() == 0)
 	{
 		ROS_ERROR("Current pose from mapper has 0 determinant!");
+	}
+	
+	if(added)
+	{
+		gPclSensor->linkLastToNeighbors(true);
 	}
 	
 	if(gUseOdometry)
@@ -355,9 +362,9 @@ int main(int argc, char **argv)
 		gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
 		gMapper->registerPoseSensor(gOdometry);
 		
-//		gIMU = new IMU(gGraph, logger);
-//		gIMU->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
-//		gMapper->registerPoseSensor(gIMU);
+		gIMU = new IMU(gGraph, logger);
+		gIMU->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
+		gMapper->registerPoseSensor(gIMU);
 	}else
 	{
 		gOdometry = NULL;
@@ -387,6 +394,8 @@ int main(int argc, char **argv)
 	gGraphPublisher->addEdgeSensor(gGpsName);
 
 	gGpsPublisher = new GpsPublisher(gGraph);
+	
+	gLoopCloser = new LoopCloser();
 
 	ROS_INFO("Mapper ready!");
 	

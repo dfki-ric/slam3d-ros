@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   laser_geometry
   cv_bridge
+  interactive_markers
 )
 
 find_package(slam3d REQUIRED)
@@ -34,6 +35,7 @@ catkin_package(
 add_library(visualization
   src/GraphPublisher.cpp
   src/GpsPublisher.cpp
+  src/LoopCloser.cpp
 )
 target_include_directories(visualization PRIVATE ${catkin_INCLUDE_DIRS})
 target_link_libraries(visualization PUBLIC slam3d::core ${catkin_LIBRARIES})
