@@ -27,13 +27,12 @@ tf::TransformBroadcaster* gTransformBroadcaster;
 tf::TransformListener* gTransformListener;
 
 ros::Publisher* gMapPublisher;
-ros::ServiceServer* gOptimizeService;
-ros::ServiceServer* gShowMapService;
-ros::ServiceServer* gWriteGraphService;
 ros::Publisher* gSignalPublisher;
 GraphPublisher* gGraphPublisher;
 GpsPublisher* gGpsPublisher;
+
 LoopCloser* gLoopCloser;
+ros::Publisher* gLoopCloudPublisher;
 
 slam3d::BoostGraph* gGraph;
 slam3d::Mapper* gMapper;
@@ -211,6 +210,12 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 		tf::StampedTransform robot_in_map(eigen2tf(current), t, gMapFrame, gRobotFrame);
 		gTransformBroadcaster->sendTransform(robot_in_map);
 	}
+//	geometry_msgs::TransformStamped tfs;
+//	tfs.transform = gLoopCloser->getTransform();
+//	tfs.header.stamp = t;
+//	tfs.header.frame_id = gMapFrame;
+//	tfs.child_frame_id = "loop_marker";
+//	gTransformBroadcaster->sendTransform(tfs);
 	
 	// Show the graph in RVIZ
 	gGraphPublisher->publishNodes(t, gMapFrame);
@@ -221,6 +226,18 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 //	gPclSensor->linkLastToNeighbors(true);
 //	tf::StampedTransform gps_origin(eigen2tf(gGpsSensor->getOrigin()), t, gMapFrame, "gps");
 //	gTransformBroadcaster->sendTransform(gps_origin);
+}
+
+bool close_loop(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
+{
+	Measurement::Ptr ptr = gGraph->getVertex(gPclSensor->getLastVertexId()).measurement;
+	slam3d::PointCloudMeasurement::Ptr pc = boost::dynamic_pointer_cast<slam3d::PointCloudMeasurement>(ptr);
+	if(pc)
+	{
+		gLoopCloser->initLoopClosing(pc->getPointCloud());
+		return true;
+	}
+	return false;
 }
 
 bool optimize(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
@@ -379,12 +396,13 @@ int main(int argc, char **argv)
 	ros::ServiceServer showSrv = n.advertiseService("show_map", &show_map);
 	ros::ServiceServer writeSrv = n.advertiseService("write_graph", &write_graph);
 	ros::Publisher signalPub = n.advertise<std_msgs::Empty>("trigger", 1, true);
+
+	ros::Publisher loopPclPub = n.advertise<slam3d::PointCloud>("loop_target", 1);
+	ros::ServiceServer loopSrv = n.advertiseService("close_loop", &close_loop);
 	
 	gMapPublisher = &pclPub;
-	gOptimizeService = &optSrv;
-	gShowMapService = &showSrv;
-	gWriteGraphService = &writeSrv;
 	gSignalPublisher = &signalPub;
+	gLoopCloudPublisher = &loopPclPub;
 
 	gGraphPublisher = new GraphPublisher(gGraph);
 	gGraphPublisher->addNodeSensor(gSensorName, 0,1,0);

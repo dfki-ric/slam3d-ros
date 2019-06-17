@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Map1/Autocompute Value Bounds1
-        - /TF1/Frames1
         - /Odometry1/Shape1
       Splitter Ratio: 0.5272729992866516
     Tree Height: 617
@@ -48,7 +47,7 @@ Visualization Manager:
       Color: 238; 238; 236
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -65,7 +64,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -97,19 +96,142 @@ Visualization Manager:
       Use rainbow: true
       Value: true
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: false
-      Marker Scale: 10
+        base_link:
+          Value: true
+        camera:
+          Value: false
+        delphi_esr:
+          Value: false
+        delphi_srr_left:
+          Value: false
+        delphi_srr_right:
+          Value: false
+        hokuyo_rear:
+          Value: false
+        ibeo_scala_b3:
+          Value: false
+        loop_marker:
+          Value: true
+        map:
+          Value: true
+        mesh:
+          Value: false
+        mobileye:
+          Value: false
+        odom:
+          Value: true
+        usboard_ultrasonic1:
+          Value: false
+        usboard_ultrasonic10:
+          Value: false
+        usboard_ultrasonic11:
+          Value: false
+        usboard_ultrasonic12:
+          Value: false
+        usboard_ultrasonic13:
+          Value: false
+        usboard_ultrasonic14:
+          Value: false
+        usboard_ultrasonic15:
+          Value: false
+        usboard_ultrasonic16:
+          Value: false
+        usboard_ultrasonic2:
+          Value: false
+        usboard_ultrasonic3:
+          Value: false
+        usboard_ultrasonic4:
+          Value: false
+        usboard_ultrasonic5:
+          Value: false
+        usboard_ultrasonic6:
+          Value: false
+        usboard_ultrasonic7:
+          Value: false
+        usboard_ultrasonic8:
+          Value: false
+        usboard_ultrasonic9:
+          Value: false
+        velodyne:
+          Value: false
+        velodyne_gps:
+          Value: false
+        xsens_mt0:
+          Value: false
+        xsens_mt1:
+          Value: false
+      Marker Scale: 5
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        map:
+          loop_marker:
+            {}
+          odom:
+            base_link:
+              delphi_esr:
+                {}
+              delphi_srr_left:
+                {}
+              delphi_srr_right:
+                {}
+              hokuyo_rear:
+                {}
+              ibeo_scala_b3:
+                {}
+              mesh:
+                {}
+              mobileye:
+                camera:
+                  {}
+              usboard_ultrasonic1:
+                {}
+              usboard_ultrasonic10:
+                {}
+              usboard_ultrasonic11:
+                {}
+              usboard_ultrasonic12:
+                {}
+              usboard_ultrasonic13:
+                {}
+              usboard_ultrasonic14:
+                {}
+              usboard_ultrasonic15:
+                {}
+              usboard_ultrasonic16:
+                {}
+              usboard_ultrasonic2:
+                {}
+              usboard_ultrasonic3:
+                {}
+              usboard_ultrasonic4:
+                {}
+              usboard_ultrasonic5:
+                {}
+              usboard_ultrasonic6:
+                {}
+              usboard_ultrasonic7:
+                {}
+              usboard_ultrasonic8:
+                {}
+              usboard_ultrasonic9:
+                {}
+              velodyne:
+                {}
+              velodyne_gps:
+                {}
+              xsens_mt0:
+                {}
+              xsens_mt1:
+                {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Alpha: 0.5
       Cell Size: 10
       Class: rviz/Grid
@@ -241,6 +363,36 @@ Visualization Manager:
       Show Visual Aids: false
       Update Topic: /LoopCloser/update
       Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: LoopTarget
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /loop_target
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -269,25 +421,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 11.682149887084961
+      Distance: 20.5603084564209
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1.5490117073059082
-        Y: 0.42058300971984863
-        Z: 7.1817180469224695e-6
+        X: 6.583086967468262
+        Y: -5.143712043762207
+        Z: 9.5367431640625e-7
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4297983646392822
-      Target Frame: base_link
+      Pitch: 0.830398440361023
+      Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 3.97855544090271
+      Yaw: 5.263580322265625
     Saved:
       - Class: rviz/XYOrbit
         Distance: 276.3855285644531
