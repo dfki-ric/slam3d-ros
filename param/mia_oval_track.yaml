@@ -1,11 +1,12 @@
 # Mapper params
 scan_resolution: 0.25
 map_resolution: 0.5
-neighbor_radius: 20.0
+neighbor_radius: 5.0
 max_neighbor_links: 0
 patch_building_range: 0
+min_loop_length: 0
 map_outlier_radius: 0.3
-map_outlier_neighbors: 5
+map_outlier_neighbors: 3
 min_translation: 2.0
 min_rotation: 2.0
 optimization_rate: 10

@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   laser_geometry
   cv_bridge
   interactive_markers
+  eigen_conversions
 )
 
 find_package(slam3d REQUIRED)

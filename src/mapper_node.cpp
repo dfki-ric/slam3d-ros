@@ -166,7 +166,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	{
 		if(gUseOdometry)
 		{
-			added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()), false);
+			added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()), true);
 		}else
 		{
 			added = gPclSensor->addMeasurement(m);
@@ -230,11 +230,11 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 
 bool close_loop(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 {
-	Measurement::Ptr ptr = gGraph->getVertex(gPclSensor->getLastVertexId()).measurement;
+	slam3d::Measurement::Ptr ptr = gGraph->getVertex(gPclSensor->getLastVertexId()).measurement;
 	slam3d::PointCloudMeasurement::Ptr pc = boost::dynamic_pointer_cast<slam3d::PointCloudMeasurement>(ptr);
 	if(pc)
 	{
-		gLoopCloser->initLoopClosing(pc->getPointCloud());
+		gLoopCloser->initLoopClosing(pc);
 		return true;
 	}
 	return false;
@@ -413,7 +413,7 @@ int main(int argc, char **argv)
 
 	gGpsPublisher = new GpsPublisher(gGraph);
 	
-	gLoopCloser = new LoopCloser();
+	gLoopCloser = new LoopCloser(gMapper);
 
 	ROS_INFO("Mapper ready!");
 	

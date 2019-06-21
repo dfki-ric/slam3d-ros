@@ -7,23 +7,30 @@
 
 #include <slam3d/sensor/pcl/PointCloudSensor.hpp>
 
+namespace slam3d
+{
+	class Mapper;
+}
 
 class LoopCloser
 {
 public:
-	LoopCloser();
+	LoopCloser(slam3d::Mapper* m);
 	
 	void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
 	void closeLoopCB( const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
 	
 	geometry_msgs::Transform getTransform();
-	void initLoopClosing(const slam3d::PointCloud::Ptr& pc);
+	void initLoopClosing(const slam3d::PointCloudMeasurement::Ptr& pc);
 
 private:
 	interactive_markers::InteractiveMarkerServer mServer;
 	interactive_markers::MenuHandler mMenuHandler;
 	
 	geometry_msgs::Transform mMarkerPose;
+	
+	slam3d::Mapper* mMapper;
+	slam3d::PointCloudMeasurement::Ptr mSourceCloud;
 };
 
 #endif

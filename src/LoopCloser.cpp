@@ -1,18 +1,25 @@
 #include "LoopCloser.hpp"
 
-#include <ros/ros.h>
+#include <slam3d/core/Mapper.hpp>
 
-LoopCloser::LoopCloser()
- : mServer("LoopCloser")
+#include <ros/ros.h>
+#include <eigen_conversions/eigen_msg.h>
+
+using namespace slam3d;
+
+LoopCloser::LoopCloser(Mapper* m)
+ : mServer("LoopCloser"), mMapper(m)
 {
 }
 
 
-void LoopCloser::initLoopClosing(const slam3d::PointCloud::Ptr& pc)
+void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 {
+	mSourceCloud = pc;
+	
 	// create an interactive marker for our server
 	visualization_msgs::InteractiveMarker int_marker;
-	int_marker.header.frame_id = "velodyne";
+	int_marker.header.frame_id = "base_link";
 	int_marker.header.stamp=ros::Time::now();
 	int_marker.name = "loop";
 	int_marker.description = "manual loop closure control";
@@ -36,21 +43,25 @@ void LoopCloser::initLoopClosing(const slam3d::PointCloud::Ptr& pc)
 */
 
 	// Create the PointCloud marker
+	Transform sensorPose = pc->getSensorPose();
 	visualization_msgs::Marker points;
 	points.header.frame_id = "";
 	points.header.stamp = ros::Time::now();
 	points.action = visualization_msgs::Marker::ADD;
-	points.pose.orientation.w = 1.0;
+
+	tf::poseEigenToMsg(sensorPose, points.pose);
+
+//	points.pose.orientation.w = 1.0;
 	points.id = 0;
 	points.type = visualization_msgs::Marker::POINTS;
-	points.scale.x = 0.05;
-	points.scale.y = 0.05;
+	points.scale.x = 0.1;
+	points.scale.y = 0.1;
 	points.color.r = 1.0;
 	points.color.g = 1.0;
 	points.color.b = 1.0;
 	points.color.a = 1.0;
 	
-	for(auto p = pc->begin(); p!= pc->end(); p++)
+	for(auto p = pc->getPointCloud()->begin(); p!= pc->getPointCloud()->end(); p++)
 	{
 		geometry_msgs::Point point;
 		point.x = p->x;
@@ -66,7 +77,7 @@ void LoopCloser::initLoopClosing(const slam3d::PointCloud::Ptr& pc)
 	// this control does not contain any markers,
 	// which will cause RViz to insert two arrows
 	visualization_msgs::InteractiveMarkerControl control;
-	control.orientation_mode = visualization_msgs::InteractiveMarkerControl::FIXED;
+	control.orientation_mode = visualization_msgs::InteractiveMarkerControl::INHERIT;
 	control.orientation.w = 1;
 	control.orientation.x = 1;
 	control.orientation.y = 0;
@@ -129,6 +140,26 @@ void LoopCloser::closeLoopCB( const visualization_msgs::InteractiveMarkerFeedbac
 {
 	ROS_INFO("Triggered manual loop closure at (%.2f, %.2f, %.2f)", feedback->pose.position.x
 	,feedback->pose.position.y, feedback->pose.position.z);
+	
+	Transform pose;
+	tf::poseMsgToEigen(feedback->pose, pose);
+	VertexObjectList neighbors = mMapper->getGraph()->getNearbyVertices(pose, 3.0);
+	
+	if(neighbors.size() > 0)
+	{
+		IdType src_id = mMapper->getGraph()->getVertex(mSourceCloud->getUniqueId()).index;
+		IdType tgt_id = neighbors[0].index;
+		TransformWithCovariance twc;
+		twc.transform = neighbors[0].corrected_pose.inverse() * pose;
+		
+		Constraint::Ptr se3(new SE3Constraint("LoopCloser", twc));
+		mMapper->getGraph()->addConstraint(src_id, tgt_id, se3);
+		mMapper->getGraph()->optimize(10000);
+	}else
+	{
+		ROS_ERROR("Could not close the loop, no vertex near target pose.");
+		return;
+	}
 	
 	mServer.clear();
 	mServer.applyChanges();
