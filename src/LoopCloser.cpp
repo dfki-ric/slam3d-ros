@@ -143,14 +143,14 @@ void LoopCloser::closeLoopCB( const visualization_msgs::InteractiveMarkerFeedbac
 	
 	Transform pose;
 	tf::poseMsgToEigen(feedback->pose, pose);
-	VertexObjectList neighbors = mMapper->getGraph()->getNearbyVertices(pose, 3.0);
+	VertexObjectList neighbors = mMapper->getGraph()->getNearbyVertices(pose, 10.0);
 	
 	if(neighbors.size() > 0)
 	{
 		IdType src_id = mMapper->getGraph()->getVertex(mSourceCloud->getUniqueId()).index;
 		IdType tgt_id = neighbors[0].index;
 		TransformWithCovariance twc;
-		twc.transform = neighbors[0].corrected_pose.inverse() * pose;
+		twc.transform = pose.inverse() * neighbors[0].corrected_pose;
 		
 		Constraint::Ptr se3(new SE3Constraint("LoopCloser", twc));
 		mMapper->getGraph()->addConstraint(src_id, tgt_id, se3);
