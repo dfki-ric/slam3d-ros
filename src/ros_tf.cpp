@@ -52,7 +52,7 @@ void IMU::handleNewVertex(IdType vertex)
 	// Add a gravity vector to this vertex
 	Eigen::Quaterniond state(currentPose.rotation());
 	Direction upVector = state.inverse() * Eigen::Vector3d::UnitZ();
-	GravityConstraint::Ptr grav(new GravityConstraint(mName, upVector, mGravityReference, Covariance<2>::Identity() * 10));
+	GravityConstraint::Ptr grav(new GravityConstraint(mName, upVector, mGravityReference, Covariance<2>::Identity()));
 	mGraph->addConstraint(vertex, 0, grav);
 }
 
@@ -71,13 +71,13 @@ void Odometry::handleNewVertex(IdType vertex)
 	if(mLastVertex > 0)
 	{
 		Transform t = mLastOdometricPose.inverse() * currentPose;
-		ScalarType rot = Eigen::AngleAxis<ScalarType>(t.rotation()).angle();
-		ScalarType trans = t.translation().norm();
-		ScalarType error = 1.0 + rot + trans; // magic
+//		ScalarType rot = Eigen::AngleAxis<ScalarType>(t.rotation()).angle();
+//		ScalarType trans = t.translation().norm();
+//		ScalarType error = 1.0 + rot + trans; // magic
 
 		TransformWithCovariance twc;
 		twc.transform = t;
-		twc.covariance = Covariance<6>::Identity() * error;
+		twc.covariance = Covariance<6>::Identity();
 		SE3Constraint::Ptr se3(new SE3Constraint(mName, twc));
 		mGraph->addConstraint(mLastVertex, vertex, se3);
 		mGraph->setCorrectedPose(vertex, mGraph->getVertex(mLastVertex).corrected_pose * twc.transform);

@@ -151,6 +151,7 @@ void LoopCloser::closeLoopCB( const visualization_msgs::InteractiveMarkerFeedbac
 		IdType tgt_id = neighbors[0].index;
 		TransformWithCovariance twc;
 		twc.transform = pose.inverse() * neighbors[0].corrected_pose;
+		twc.covariance = Covariance<6>::Identity() * 100;
 		
 		Constraint::Ptr se3(new SE3Constraint("LoopCloser", twc));
 		mMapper->getGraph()->addConstraint(src_id, tgt_id, se3);
