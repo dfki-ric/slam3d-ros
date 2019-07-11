@@ -50,6 +50,7 @@ double gMapResolution;
 double gScanResolution;
 double gMapOutlierRadius;
 int gMapOutlierNeighbors;
+double gGpsCovScale;
 
 bool gUseOdometry;
 bool gAddOdomEdges;
@@ -87,11 +88,55 @@ bool checkOdometry(const ros::Time& t)
 	return true;
 }
 
+void publishTransforms(const ros::Time& t)
+{
+	slam3d::Transform current = gMapper->getCurrentPose();
+	if(current.matrix().determinant() == 0)
+	{
+		ROS_ERROR("Current pose from mapper has 0 determinant!");
+	}
+
+	if(gUseOdometry)
+	{
+		gOdomInMap.stamp_ = t;
+		gTransformBroadcaster->sendTransform(gOdomInMap);
+	}else
+	{
+		tf::StampedTransform robot_in_map(eigen2tf(current), t, gMapFrame, gRobotFrame);
+		gTransformBroadcaster->sendTransform(robot_in_map);
+	}
+}
+
+void updateOdomInMap(const ros::Time& t)
+{
+	slam3d::Transform current = gMapper->getCurrentPose();
+	tf::Stamped<tf::Pose> map_in_robot(eigen2tf(current.inverse()), t, gRobotFrame);
+	tf::Stamped<tf::Pose> map_in_odom;
+	try
+	{
+		gTransformListener->waitForTransform(gRobotFrame, gOdometryFrame, t, ros::Duration(0.1));
+		gTransformListener->transformPose(gOdometryFrame, map_in_robot, map_in_odom);
+		gOdomInMap = tf::StampedTransform(map_in_odom.inverse(), t, gMapFrame, gOdometryFrame);
+	}catch(tf2::TransformException &e)
+	{
+		ROS_ERROR("%s", e.what());
+	}
+}
+
+void publishGraph(const ros::Time& t)
+{
+	gGraphPublisher->publishNodes(t, gMapFrame);
+	gGraphPublisher->publishEdges(gOdometry->getName(), t, gMapFrame);
+	gGraphPublisher->publishEdges(gSensorName, t, gMapFrame);
+	gGraphPublisher->publishPoseEdges(gGpsName, t, gMapFrame);
+}
+
 void receiveGPS(const sensor_msgs::NavSatFix::ConstPtr& gps)
 {
 	if(gps->header.stamp < gLastTime)
 	{
 		ROS_WARN("Received late GPS sample!");
+		return;
 	}
 	gLastTime = gps->header.stamp;
 	
@@ -111,7 +156,7 @@ void receiveGPS(const sensor_msgs::NavSatFix::ConstPtr& gps)
 		return;
 	
 	Position pos = gGpsSensor->toUTM(gps->longitude, gps->latitude, gps->altitude);
-	Covariance<3> cov = Covariance<3>::Identity() * 1000; //TODO: Read covariance from message
+	Covariance<3> cov = Covariance<3>::Identity(); //TODO: Read covariance from message
 	timeval t = fromRosTime(gps->header.stamp);
 	GpsMeasurement::Ptr m(new GpsMeasurement(pos, cov, t, gRobotName, gGpsName, tf2eigen(gps_pose)));
 //	try
@@ -138,6 +183,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	if(t < gLastTime)
 	{
 		ROS_WARN("Received late Scan!");
+		return;
 	}
 	gLastTime = t;
 	
@@ -167,71 +213,25 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	bool added;
 	slam3d::PointCloudMeasurement::Ptr m(
 		new slam3d::PointCloudMeasurement(cloud, gRobotName, gSensorName, tf2eigen(laser_pose)));
-//	try
-//	{
-		if(gUseOdometry)
-		{
-			added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()), gSeqScanMatch);
-		}else
-		{
-			added = gPclSensor->addMeasurement(m);
-		}
-//	}catch(std::exception &e)
-//	{
-//		ROS_ERROR("Could not add new measurement: %s", e.what());
-//		return;
-//	}
-	
-	if(added)
-	{
-		gPclSensor->linkLastToNeighbors(true);
-	}
-	
-	slam3d::Transform current = gMapper->getLastVertex().corrected_pose;
-	if(current.matrix().determinant() == 0)
-	{
-		ROS_ERROR("Current pose from mapper has 0 determinant!");
-	}
 
 	if(gUseOdometry)
 	{
-		if(added)
-		{
-			tf::Stamped<tf::Pose> map_in_robot(eigen2tf(current.inverse()), t, gRobotFrame);
-			tf::Stamped<tf::Pose> map_in_odom;
-			try
-			{
-				gTransformListener->waitForTransform(gRobotFrame, gOdometryFrame, t, ros::Duration(0.1));
-				gTransformListener->transformPose(gOdometryFrame, map_in_robot, map_in_odom);
-				gOdomInMap = tf::StampedTransform(map_in_odom.inverse(), t, gMapFrame, gOdometryFrame);
-			}catch(tf2::TransformException &e)
-			{
-				ROS_ERROR("%s", e.what());
-			}
-		}
-		gOdomInMap.stamp_ = t;
-		gTransformBroadcaster->sendTransform(gOdomInMap);
+		added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()), gSeqScanMatch);
 	}else
 	{
-		tf::StampedTransform robot_in_map(eigen2tf(current), t, gMapFrame, gRobotFrame);
-		gTransformBroadcaster->sendTransform(robot_in_map);
+		added = gPclSensor->addMeasurement(m);
 	}
-//	geometry_msgs::TransformStamped tfs;
-//	tfs.transform = gLoopCloser->getTransform();
-//	tfs.header.stamp = t;
-//	tfs.header.frame_id = gMapFrame;
-//	tfs.child_frame_id = "loop_marker";
-//	gTransformBroadcaster->sendTransform(tfs);
 	
-	// Show the graph in RVIZ
-	gGraphPublisher->publishNodes(t, gMapFrame);
-	gGraphPublisher->publishEdges(gOdometry->getName(), t, gMapFrame);
-	gGraphPublisher->publishEdges(gSensorName, t, gMapFrame);
-	gGraphPublisher->publishPoseEdges(gGpsName, t, gMapFrame);
-
-//	gPclSensor->linkLastToNeighbors(true);
-//	tf::StampedTransform gps_origin(eigen2tf(gGpsSensor->getOrigin()), t, gMapFrame, "gps");
-//	gTransformBroadcaster->sendTransform(gps_origin);
+	if(added)
+	{
+//		gPclSensor->linkLastToNeighbors(true);
+		updateOdomInMap(t);
+		publishTransforms(t);
+		publishGraph(t);
+	}else
+	{
+		publishTransforms(t);
+	}
 }
 
 bool close_loop(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
@@ -250,6 +250,10 @@ bool optimize(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 {
 	gSolver->saveGraph("input_graph.g2o");
 	bool success = gGraph->optimize();
+
+	updateOdomInMap(gLastTime);
+	publishTransforms(gLastTime);
+	publishGraph(gLastTime);
 	return true;
 }
 
@@ -349,6 +353,7 @@ int main(int argc, char **argv)
 	int loop_len;
 	n.param("min_loop_length", loop_len, 1);
 	gPclSensor->setMinLoopLength(loop_len);
+	gPclSensor->setCovarianceScale(n.param("pcl_cov_scale", 1.0));
 
 	gMapper->registerSensor(gPclSensor);
 	
@@ -381,6 +386,7 @@ int main(int argc, char **argv)
 	{
 		gOdometry = new Odometry(gGraph, logger);
 		gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
+		gOdometry->setCovarianceScale(n.param("odo_cov_scale", 1.0));
 		if(gAddOdomEdges)
 		{
 			gMapper->registerPoseSensor(gOdometry);
@@ -394,6 +400,7 @@ int main(int argc, char **argv)
 	{
 		gIMU = new IMU(gGraph, logger);
 		gIMU->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
+		gIMU->setCovarianceScale(n.param("imu_cov_scale", 1.0));
 		gMapper->registerPoseSensor(gIMU);
 	}else
 	{
@@ -407,7 +414,7 @@ int main(int argc, char **argv)
 	ros::ServiceServer showSrv = n.advertiseService("show_map", &show_map);
 	ros::ServiceServer writeSrv = n.advertiseService("write_graph", &write_graph);
 	ros::Publisher signalPub = n.advertise<std_msgs::Empty>("trigger", 1, true);
-	ros::Subscriber gpsSub = n.subscribe<sensor_msgs::NavSatFix>("gps", 10, &receiveGPS);
+	ros::Subscriber gpsSub;
 
 	// Create GpsSensor
 	if(gUseGps)
@@ -415,7 +422,12 @@ int main(int argc, char **argv)
 		n.param("gps_name", gGpsName, std::string("GpsSensor"));
 		gGpsSensor = new slam3d::GpsSensor(gGpsName, logger);
 		gGpsSensor->initCoordTransform();
-		gMapper->registerSensor(gGpsSensor);	
+		gMapper->registerSensor(gGpsSensor);
+		gpsSub = n.subscribe<sensor_msgs::NavSatFix>("gps", 10, &receiveGPS);
+		n.param("gps_cov_scale", gGpsCovScale, 1.0);
+	}else
+	{
+		gGraph->fixNext();
 	}
 
 	ros::Publisher loopPclPub = n.advertise<slam3d::PointCloud>("loop_target", 1);

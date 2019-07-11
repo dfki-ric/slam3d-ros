@@ -52,7 +52,7 @@ void IMU::handleNewVertex(IdType vertex)
 	// Add a gravity vector to this vertex
 	Eigen::Quaterniond state(currentPose.rotation());
 	Direction upVector = state.inverse() * Eigen::Vector3d::UnitZ();
-	GravityConstraint::Ptr grav(new GravityConstraint(mName, upVector, mGravityReference, Covariance<2>::Identity()));
+	GravityConstraint::Ptr grav(new GravityConstraint(mName, upVector, mGravityReference, Covariance<2>::Identity() * mCovarianceScale));
 	mGraph->addConstraint(vertex, 0, grav);
 }
 
@@ -77,7 +77,7 @@ void Odometry::handleNewVertex(IdType vertex)
 
 		TransformWithCovariance twc;
 		twc.transform = t;
-		twc.covariance = Covariance<6>::Identity();
+		twc.covariance = Covariance<6>::Identity() * mCovarianceScale;
 		SE3Constraint::Ptr se3(new SE3Constraint(mName, twc));
 		mGraph->addConstraint(mLastVertex, vertex, se3);
 		mGraph->setCorrectedPose(vertex, mGraph->getVertex(mLastVertex).corrected_pose * twc.transform);
