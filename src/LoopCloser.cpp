@@ -10,6 +10,8 @@ using namespace slam3d;
 LoopCloser::LoopCloser(Mapper* m)
  : mServer("LoopCloser"), mMapper(m), mCovarianceScale(1.0)
 {
+	interactive_markers::MenuHandler::EntryHandle close_loop =
+		mMenuHandler.insert("Close loop", boost::bind(&LoopCloser::closeLoopCB, this, _1));
 }
 
 
@@ -114,9 +116,6 @@ void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 	// tell the server to call processFeedback() when feedback arrives for it
 	mServer.insert(int_marker, boost::bind(&LoopCloser::processFeedback, this, _1));
 
-	interactive_markers::MenuHandler::EntryHandle close_loop =
-		mMenuHandler.insert("Close loop", boost::bind(&LoopCloser::closeLoopCB, this, _1));
-//		mMenuHandler.insert("Close loop");
 	mMenuHandler.apply(mServer, "loop");
 
 	// 'commit' changes and send to all clients
