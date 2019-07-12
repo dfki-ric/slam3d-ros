@@ -22,6 +22,8 @@ public:
 	
 	geometry_msgs::Transform getTransform();
 	void initLoopClosing(const slam3d::PointCloudMeasurement::Ptr& pc);
+	
+	void setCovarianceScale(slam3d::ScalarType s) { mCovarianceScale = s; }
 
 private:
 	interactive_markers::InteractiveMarkerServer mServer;
@@ -31,6 +33,8 @@ private:
 	
 	slam3d::Mapper* mMapper;
 	slam3d::PointCloudMeasurement::Ptr mSourceCloud;
+	
+	slam3d::ScalarType mCovarianceScale;
 };
 
 #endif

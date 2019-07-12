@@ -32,7 +32,6 @@ GraphPublisher* gGraphPublisher;
 GpsPublisher* gGpsPublisher;
 
 LoopCloser* gLoopCloser;
-ros::Publisher* gLoopCloudPublisher;
 
 slam3d::BoostGraph* gGraph;
 slam3d::Mapper* gMapper;
@@ -430,12 +429,10 @@ int main(int argc, char **argv)
 		gGraph->fixNext();
 	}
 
-	ros::Publisher loopPclPub = n.advertise<slam3d::PointCloud>("loop_target", 1);
 	ros::ServiceServer loopSrv = n.advertiseService("close_loop", &close_loop);
 	
 	gMapPublisher = &pclPub;
 	gSignalPublisher = &signalPub;
-	gLoopCloudPublisher = &loopPclPub;
 
 	gGraphPublisher = new GraphPublisher(gGraph);
 	gGraphPublisher->addNodeSensor(gSensorName, 0,1,0);
@@ -448,6 +445,7 @@ int main(int argc, char **argv)
 	gGpsPublisher = new GpsPublisher(gGraph);
 	
 	gLoopCloser = new LoopCloser(gMapper);
+	gLoopCloser->setCovarianceScale(n.param("lcl_cov_scale", 1.0));
 
 	ROS_INFO("Mapper ready!");
 	

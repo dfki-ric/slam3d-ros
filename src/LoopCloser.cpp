@@ -8,7 +8,7 @@
 using namespace slam3d;
 
 LoopCloser::LoopCloser(Mapper* m)
- : mServer("LoopCloser"), mMapper(m)
+ : mServer("LoopCloser"), mMapper(m), mCovarianceScale(1.0)
 {
 }
 
@@ -143,6 +143,7 @@ void LoopCloser::closeLoopCB( const visualization_msgs::InteractiveMarkerFeedbac
 	
 	Transform pose;
 	tf::poseMsgToEigen(feedback->pose, pose);
+	mMapper->getGraph()->buildNeighborIndex(mSourceCloud->getSensorName());
 	VertexObjectList neighbors = mMapper->getGraph()->getNearbyVertices(pose, 10.0);
 	
 	if(neighbors.size() > 0)
@@ -151,7 +152,7 @@ void LoopCloser::closeLoopCB( const visualization_msgs::InteractiveMarkerFeedbac
 		IdType tgt_id = neighbors[0].index;
 		TransformWithCovariance twc;
 		twc.transform = pose.inverse() * neighbors[0].corrected_pose;
-		twc.covariance = Covariance<6>::Identity() * 100;
+		twc.covariance = Covariance<6>::Identity() * mCovarianceScale;
 		
 		Constraint::Ptr se3(new SE3Constraint("LoopCloser", twc));
 		mMapper->getGraph()->addConstraint(src_id, tgt_id, se3);

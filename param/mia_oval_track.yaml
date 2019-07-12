@@ -31,6 +31,7 @@ odo_cov_scale: 1.0
 gps_cov_scale: 10.0
 pcl_cov_scale: 0.2
 imu_cov_scale: 10.0
+lcl_cov_scale: 1.0
 
 # GICP params
 icp_fine/max_correspondence_distance: 1.0
