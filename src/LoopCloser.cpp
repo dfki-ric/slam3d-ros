@@ -29,10 +29,15 @@ void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 	// create a non-interactive control which contains the box
 	visualization_msgs::InteractiveMarkerControl box_control;
 	box_control.always_visible = true;
-	box_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+	box_control.orientation_mode = visualization_msgs::InteractiveMarkerControl::INHERIT;
+	box_control.orientation.w = 1;
+	box_control.orientation.x = 0;
+	box_control.orientation.y = 1;
+	box_control.orientation.z = 0;
+	box_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
 
 	// create a grey box marker
-/*	visualization_msgs::Marker box_marker;
+	visualization_msgs::Marker box_marker;
 	box_marker.type = visualization_msgs::Marker::CUBE;
 	box_marker.scale.x = 0.45;
 	box_marker.scale.y = 0.45;
@@ -42,7 +47,7 @@ void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 	box_marker.color.b = 0.5;
 	box_marker.color.a = 1.0;
 	box_control.markers.push_back( box_marker );
-*/
+
 
 	// Create the PointCloud marker
 	Transform sensorPose = pc->getSensorPose();
@@ -53,7 +58,6 @@ void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 
 	tf::poseEigenToMsg(sensorPose, points.pose);
 
-//	points.pose.orientation.w = 1.0;
 	points.id = 0;
 	points.type = visualization_msgs::Marker::POINTS;
 	points.scale.x = 0.1;
@@ -75,9 +79,8 @@ void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 
 	int_marker.controls.push_back( box_control );
 
-	// create a control which will move the box
-	// this control does not contain any markers,
-	// which will cause RViz to insert two arrows
+	// Create the controls which will move the box. This control does not contain any markers,
+	// which will cause RViz to insert the default markers (arrows and circles)
 	visualization_msgs::InteractiveMarkerControl control;
 	control.orientation_mode = visualization_msgs::InteractiveMarkerControl::INHERIT;
 	control.orientation.w = 1;
@@ -86,9 +89,6 @@ void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 	control.orientation.z = 0;
 	control.name = "rotate_x";
 	control.interaction_mode = visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
-	int_marker.controls.push_back(control);
-	control.name = "move_x";
-	control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
 	int_marker.controls.push_back(control);
 
 	control.orientation.w = 1;
@@ -109,9 +109,7 @@ void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 	control.name = "rotate_y";
 	control.interaction_mode = visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
 	int_marker.controls.push_back(control);
-	control.name = "move_y";
-	control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
-	int_marker.controls.push_back(control);
+
 	// add the interactive marker to our collection &
 	// tell the server to call processFeedback() when feedback arrives for it
 	mServer.insert(int_marker, boost::bind(&LoopCloser::processFeedback, this, _1));
