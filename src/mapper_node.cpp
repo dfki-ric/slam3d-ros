@@ -127,6 +127,7 @@ void publishGraph(const ros::Time& t)
 	gGraphPublisher->publishNodes(t, gMapFrame);
 	gGraphPublisher->publishEdges(gOdometry->getName(), t, gMapFrame);
 	gGraphPublisher->publishEdges(gSensorName, t, gMapFrame);
+	gGraphPublisher->publishEdges("LoopCloser", t, gMapFrame);
 	gGraphPublisher->publishPoseEdges(gGpsName, t, gMapFrame);
 }
 
