@@ -156,7 +156,7 @@ void receiveGPS(const sensor_msgs::NavSatFix::ConstPtr& gps)
 		return;
 	
 	Position pos = gGpsSensor->toUTM(gps->longitude, gps->latitude, gps->altitude);
-	Covariance<3> cov = Covariance<3>::Identity(); //TODO: Read covariance from message
+	Covariance<3> cov = Covariance<3>::Identity() * gGpsCovScale; //TODO: Read covariance from message
 	timeval t = fromRosTime(gps->header.stamp);
 	GpsMeasurement::Ptr m(new GpsMeasurement(pos, cov, t, gRobotName, gGpsName, tf2eigen(gps_pose)));
 //	try
@@ -224,7 +224,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	
 	if(added)
 	{
-//		gPclSensor->linkLastToNeighbors(true);
+		gPclSensor->linkLastToNeighbors(true);
 		updateOdomInMap(t);
 		publishTransforms(t);
 		publishGraph(t);
