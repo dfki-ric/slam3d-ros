@@ -7,11 +7,11 @@
 
 using namespace slam3d;
 
-LoopCloser::LoopCloser(Mapper* m)
+LoopCloser::LoopCloser(Mapper* m, PointCloudSensor* pcs)
  : mServer("LoopCloser"), mMapper(m), mCovarianceScale(1.0)
 {
 	interactive_markers::MenuHandler::EntryHandle close_loop =
-		mMenuHandler.insert("Close loop", boost::bind(&LoopCloser::closeLoopCB, this, _1));
+		mMenuHandler.insert("Close loop", boost::bind(&LoopCloser::closeLoopCB, this, pcs, _1));
 }
 
 
@@ -110,30 +110,13 @@ void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 	control.interaction_mode = visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
 	int_marker.controls.push_back(control);
 
-	// add the interactive marker to our collection &
-	// tell the server to call processFeedback() when feedback arrives for it
-	mServer.insert(int_marker, boost::bind(&LoopCloser::processFeedback, this, _1));
-
+	// Add it to the server
+	mServer.insert(int_marker);
 	mMenuHandler.apply(mServer, "loop");
-
-	// 'commit' changes and send to all clients
 	mServer.applyChanges();
 }
 
-void LoopCloser::processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback )
-{
-	mMarkerPose.translation.x = feedback->pose.position.x;
-	mMarkerPose.translation.y = feedback->pose.position.y;
-	mMarkerPose.translation.z = feedback->pose.position.z;
-	mMarkerPose.rotation = feedback->pose.orientation;
-}
-
-geometry_msgs::Transform LoopCloser::getTransform()
-{
-	return mMarkerPose;
-}
-
-void LoopCloser::closeLoopCB( const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback )
+void LoopCloser::closeLoopCB(PointCloudSensor* pcs, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback )
 {
 	ROS_INFO("Triggered manual loop closure at (%.2f, %.2f, %.2f)", feedback->pose.position.x
 	,feedback->pose.position.y, feedback->pose.position.z);
@@ -147,12 +130,15 @@ void LoopCloser::closeLoopCB( const visualization_msgs::InteractiveMarkerFeedbac
 	{
 		IdType src_id = mMapper->getGraph()->getVertex(mSourceCloud->getUniqueId()).index;
 		IdType tgt_id = neighbors[0].index;
-		TransformWithCovariance twc;
-		twc.transform = pose.inverse() * neighbors[0].corrected_pose;
-		twc.covariance = Covariance<6>::Identity() * mCovarianceScale;
-		
-		Constraint::Ptr se3(new SE3Constraint("LoopCloser", twc));
-		mMapper->getGraph()->addConstraint(src_id, tgt_id, se3);
+//		TransformWithCovariance twc;
+//		twc.transform = pose.inverse() * neighbors[0].corrected_pose;
+//		twc.covariance = Covariance<6>::Identity() * mCovarianceScale;
+
+		Transform rel_pose = pose.inverse() * neighbors[0].corrected_pose;
+		pcs->link(src_id, tgt_id, rel_pose);
+
+//		Constraint::Ptr se3(new SE3Constraint("LoopCloser", twc));
+//		mMapper->getGraph()->addConstraint(src_id, tgt_id, se3);
 		mMapper->getGraph()->optimize(10000);
 	}else
 	{

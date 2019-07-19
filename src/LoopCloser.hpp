@@ -15,12 +15,9 @@ namespace slam3d
 class LoopCloser
 {
 public:
-	LoopCloser(slam3d::Mapper* m);
+	LoopCloser(slam3d::Mapper* m, slam3d::PointCloudSensor* pcs);
 	
-	void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
-	void closeLoopCB( const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
-	
-	geometry_msgs::Transform getTransform();
+	void closeLoopCB(slam3d::PointCloudSensor* pcs, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
 	void initLoopClosing(const slam3d::PointCloudMeasurement::Ptr& pc);
 	
 	void setCovarianceScale(slam3d::ScalarType s) { mCovarianceScale = s; }
