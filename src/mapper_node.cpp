@@ -421,6 +421,7 @@ int main(int argc, char **argv)
 	{
 		n.param("gps_name", gGpsName, std::string("GpsSensor"));
 		gGpsSensor = new slam3d::GpsSensor(gGpsName, logger);
+		gGpsSensor->setMinPoseDistance(n.param("gps_min_distance", 10.0), 0);
 		gGpsSensor->initCoordTransform();
 		gMapper->registerSensor(gGpsSensor);
 		gpsSub = n.subscribe<sensor_msgs::NavSatFix>("gps", 10, &receiveGPS);
