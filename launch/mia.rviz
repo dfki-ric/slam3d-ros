@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /PointCloud21
         - /Map1/Autocompute Value Bounds1
         - /Odometry1/Shape1
       Splitter Ratio: 0.5272729992866516
@@ -69,9 +68,9 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 16.122669219970703
-        Min Value: -0.8236079216003418
-        Value: true
+        Max Value: 5
+        Min Value: -2
+        Value: false
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
@@ -155,6 +154,8 @@ Visualization Manager:
           Value: false
         usboard_ultrasonic9:
           Value: false
+        utm:
+          Value: true
         velodyne:
           Value: false
         velodyne_gps:
@@ -169,66 +170,66 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        base_link:
-          delphi_esr:
-            {}
-          delphi_srr_left:
-            {}
-          delphi_srr_right:
-            {}
-          hokuyo_rear:
-            {}
-          ibeo_scala_b3:
-            {}
-          mesh:
-            {}
-          mobileye:
-            camera:
-              {}
-          usboard_ultrasonic1:
-            {}
-          usboard_ultrasonic10:
-            {}
-          usboard_ultrasonic11:
-            {}
-          usboard_ultrasonic12:
-            {}
-          usboard_ultrasonic13:
-            {}
-          usboard_ultrasonic14:
-            {}
-          usboard_ultrasonic15:
-            {}
-          usboard_ultrasonic16:
-            {}
-          usboard_ultrasonic2:
-            {}
-          usboard_ultrasonic3:
-            {}
-          usboard_ultrasonic4:
-            {}
-          usboard_ultrasonic5:
-            {}
-          usboard_ultrasonic6:
-            {}
-          usboard_ultrasonic7:
-            {}
-          usboard_ultrasonic8:
-            {}
-          usboard_ultrasonic9:
-            {}
-          velodyne:
-            {}
-          velodyne_gps:
-            {}
-          xsens_mt0:
-            {}
-          xsens_mt1:
-            {}
         map:
-          {}
-        odom:
-          {}
+          odom:
+            base_link:
+              delphi_esr:
+                {}
+              delphi_srr_left:
+                {}
+              delphi_srr_right:
+                {}
+              hokuyo_rear:
+                {}
+              ibeo_scala_b3:
+                {}
+              mesh:
+                {}
+              mobileye:
+                camera:
+                  {}
+              usboard_ultrasonic1:
+                {}
+              usboard_ultrasonic10:
+                {}
+              usboard_ultrasonic11:
+                {}
+              usboard_ultrasonic12:
+                {}
+              usboard_ultrasonic13:
+                {}
+              usboard_ultrasonic14:
+                {}
+              usboard_ultrasonic15:
+                {}
+              usboard_ultrasonic16:
+                {}
+              usboard_ultrasonic2:
+                {}
+              usboard_ultrasonic3:
+                {}
+              usboard_ultrasonic4:
+                {}
+              usboard_ultrasonic5:
+                {}
+              usboard_ultrasonic6:
+                {}
+              usboard_ultrasonic7:
+                {}
+              usboard_ultrasonic8:
+                {}
+              usboard_ultrasonic9:
+                {}
+              velodyne:
+                {}
+              velodyne_gps:
+                {}
+              xsens_mt0:
+                {}
+              xsens_mt1:
+                {}
+          utm:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
@@ -277,6 +278,14 @@ Visualization Manager:
       Enabled: true
       Marker Topic: /edgesGpsSensor
       Name: EdgesGPS
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /edgesLoopCloser
+      Name: EdgesLoop
       Namespaces:
         "": true
       Queue Size: 100
@@ -390,25 +399,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 81.05294036865234
+      Distance: 30.416627883911133
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
-      Focal Shape Fixed Size: false
+        X: -8.187217712402344
+        Y: 5.70683479309082
+        Z: 9.5367431640625e-6
+      Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.23539835214614868
+      Pitch: 0.9954466819763184
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.7235636711120605
+      Yaw: 1.9081467390060425
     Saved:
       - Class: rviz/XYOrbit
         Distance: 276.3855285644531
