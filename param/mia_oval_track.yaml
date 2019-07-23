@@ -3,7 +3,7 @@ scan_resolution: 0.25
 map_resolution: 0.5
 neighbor_radius: 5.0
 max_neighbor_links: 0
-patch_building_range: 3
+patch_building_range: 5
 min_loop_length: 20
 map_outlier_radius: 0.3
 map_outlier_neighbors: 3
@@ -11,6 +11,7 @@ min_translation: 2.0
 min_rotation: 2.0
 optimization_rate: 20
 multi_threaded: true
+use_space_mouse: false
 
 use_seq_scan_matching: false
 use_imu: true
@@ -36,6 +37,6 @@ lcl_cov_scale: 0.1
 
 # GICP params
 icp_fine/max_correspondence_distance: 0.5
-icp_fine/max_fitness_score: 10.0
+icp_fine/max_fitness_score: 5.0
 icp_fine/maximum_iterations: 50
 icp_fine/point_cloud_density: 0.5

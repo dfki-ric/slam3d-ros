@@ -2,18 +2,46 @@
 
 #include <slam3d/core/Mapper.hpp>
 
-#include <ros/ros.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <Eigen/Geometry>
 
 using namespace slam3d;
 
-LoopCloser::LoopCloser(Mapper* m, PointCloudSensor* pcs)
- : mServer("LoopCloser"), mMapper(m), mCovarianceScale(1.0)
+LoopCloser::LoopCloser(Mapper* m, PointCloudSensor* pcs, bool space)
+ : mServer("LoopCloser"), mMapper(m), mCovarianceScale(1.0), mUseSpaceMouse(space)
 {
 	interactive_markers::MenuHandler::EntryHandle close_loop =
 		mMenuHandler.insert("Close loop", boost::bind(&LoopCloser::closeLoopCB, this, pcs, _1));
+	
+	if(mUseSpaceMouse)
+	{
+		ros::NodeHandle n;
+		mTwistSubscriber = n.subscribe<geometry_msgs::Twist>("/spacenav/twist", 1, boost::bind(&LoopCloser::receiveTwist, this, _1));
+	}
 }
 
+void LoopCloser::receiveTwist(const geometry_msgs::Twist::ConstPtr& twist)
+{
+	visualization_msgs::InteractiveMarker int_marker;
+	mServer.get("loop", int_marker);
+	geometry_msgs::Pose pose = int_marker.pose;
+	pose.position.x += twist->linear.x;
+	pose.position.y += twist->linear.y;
+	pose.position.z += twist->linear.z;
+	
+	Eigen::Affine3d affine;
+	tf::poseMsgToEigen(pose, affine);
+
+	Eigen::Quaterniond q = Eigen::AngleAxisd(twist->angular.x * 0.01, Eigen::Vector3d::UnitX())
+	                     * Eigen::AngleAxisd(twist->angular.y * 0.01, Eigen::Vector3d::UnitY())
+                         * Eigen::AngleAxisd(twist->angular.z * 0.01, Eigen::Vector3d::UnitZ());
+	
+	affine.linear() = affine.linear() * q;
+	tf::poseEigenToMsg(affine, pose);
+	
+	mServer.setPose("loop", pose);
+	mServer.applyChanges();
+}
 
 void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 {
@@ -34,7 +62,11 @@ void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 	box_control.orientation.x = 0;
 	box_control.orientation.y = 1;
 	box_control.orientation.z = 0;
-	box_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
+	
+	if(mUseSpaceMouse)
+		box_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MENU;
+	else
+		box_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
 
 	// create a grey box marker
 	visualization_msgs::Marker box_marker;
@@ -79,36 +111,39 @@ void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 
 	int_marker.controls.push_back( box_control );
 
-	// Create the controls which will move the box. This control does not contain any markers,
-	// which will cause RViz to insert the default markers (arrows and circles)
-	visualization_msgs::InteractiveMarkerControl control;
-	control.orientation_mode = visualization_msgs::InteractiveMarkerControl::INHERIT;
-	control.orientation.w = 1;
-	control.orientation.x = 1;
-	control.orientation.y = 0;
-	control.orientation.z = 0;
-	control.name = "rotate_x";
-	control.interaction_mode = visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
-	int_marker.controls.push_back(control);
+	if(!mUseSpaceMouse)
+	{
+		// Create the controls which will move the box. This control does not contain any markers,
+		// which will cause RViz to insert the default markers (arrows and circles)
+		visualization_msgs::InteractiveMarkerControl control;
+		control.orientation_mode = visualization_msgs::InteractiveMarkerControl::INHERIT;
+		control.orientation.w = 1;
+		control.orientation.x = 1;
+		control.orientation.y = 0;
+		control.orientation.z = 0;
+		control.name = "rotate_x";
+		control.interaction_mode = visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
+		int_marker.controls.push_back(control);
 
-	control.orientation.w = 1;
-	control.orientation.x = 0;
-	control.orientation.y = 1;
-	control.orientation.z = 0;
-	control.name = "rotate_z";
-	control.interaction_mode = visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
-	int_marker.controls.push_back(control);
-	control.name = "move_z";
-	control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
-	int_marker.controls.push_back(control);
+		control.orientation.w = 1;
+		control.orientation.x = 0;
+		control.orientation.y = 1;
+		control.orientation.z = 0;
+		control.name = "rotate_z";
+		control.interaction_mode = visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
+		int_marker.controls.push_back(control);
+		control.name = "move_z";
+		control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+		int_marker.controls.push_back(control);
 
-	control.orientation.w = 1;
-	control.orientation.x = 0;
-	control.orientation.y = 0;
-	control.orientation.z = 1;
-	control.name = "rotate_y";
-	control.interaction_mode = visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
-	int_marker.controls.push_back(control);
+		control.orientation.w = 1;
+		control.orientation.x = 0;
+		control.orientation.y = 0;
+		control.orientation.z = 1;
+		control.name = "rotate_y";
+		control.interaction_mode = visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
+		int_marker.controls.push_back(control);
+	}
 
 	// Add it to the server
 	mServer.insert(int_marker);

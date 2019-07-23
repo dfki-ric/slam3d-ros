@@ -450,7 +450,7 @@ int main(int argc, char **argv)
 
 	gGpsPublisher = new GpsPublisher(gGraph);
 	
-	gLoopCloser = new LoopCloser(gMapper, gPclSensor);
+	gLoopCloser = new LoopCloser(gMapper, gPclSensor, n.param("use_space_mouse", false));
 	gLoopCloser->setCovarianceScale(n.param("lcl_cov_scale", 1.0));
 
 	ROS_INFO("Mapper ready!");
