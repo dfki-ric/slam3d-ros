@@ -17,6 +17,8 @@
 #include <iostream>
 #include <thread>
 
+#include <pcl/io/pcd_io.h>
+
 #include "GraphPublisher.hpp"
 #include "GpsPublisher.hpp"
 #include "LoopCloser.hpp"
@@ -264,6 +266,8 @@ void build_map(VertexObjectList vertices)
 	PointCloud::Ptr downsampled = gPclSensor->downsample(cleaned, gMapResolution);
 	downsampled->header.frame_id = gMapFrame;
 	gMapPublisher->publish(downsampled);
+	
+	pcl::io::savePCDFileASCII("slam3d_map.pcd", *downsampled);
 }
 
 bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
