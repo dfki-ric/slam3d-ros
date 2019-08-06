@@ -29,17 +29,17 @@ catkin_package(
   CATKIN_DEPENDS roscpp pcl_ros sensor_msgs geometry_msgs visualization_msgs std_srvs tf message_runtime
 )
 
+add_subdirectory(src)
+
+# Export the library interface
+install(EXPORT slam3d_ros-targets
+	NAMESPACE slam3d_ros::
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/cmake
+)
+
 ###########
 ## Build ##
 ###########
-
-add_library(visualization
-  src/GraphPublisher.cpp
-  src/GpsPublisher.cpp
-  src/LoopCloser.cpp
-)
-target_include_directories(visualization PRIVATE ${catkin_INCLUDE_DIRS})
-target_link_libraries(visualization PUBLIC slam3d::core ${catkin_LIBRARIES})
 
 # 3D-Mapper
 add_executable(mapper_node

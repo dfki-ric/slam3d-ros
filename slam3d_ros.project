@@ -95,15 +95,19 @@
     <File Name="src/velodyne_publisher.cpp"/>
     <File Name="src/kitti_publisher.cpp"/>
     <File Name="src/mapper2d_node.cpp"/>
-    <File Name="src/GraphPublisher.hpp"/>
-    <File Name="src/GraphPublisher.cpp"/>
-    <File Name="src/GpsPublisher.hpp"/>
-    <File Name="src/GpsPublisher.cpp"/>
     <File Name="src/ros_tf.hpp"/>
     <File Name="src/ros_tf.cpp"/>
     <File Name="src/ros_common.cpp"/>
-    <File Name="src/LoopCloser.hpp"/>
-    <File Name="src/LoopCloser.cpp"/>
+    <VirtualDirectory Name="visualization">
+      <File Name="src/visualization/CMakeLists.txt"/>
+      <File Name="src/visualization/GpsPublisher.cpp"/>
+      <File Name="src/visualization/GpsPublisher.hpp"/>
+      <File Name="src/visualization/GraphPublisher.cpp"/>
+      <File Name="src/visualization/GraphPublisher.hpp"/>
+      <File Name="src/visualization/LoopCloser.cpp"/>
+      <File Name="src/visualization/LoopCloser.hpp"/>
+    </VirtualDirectory>
+    <File Name="src/CMakeLists.txt"/>
   </VirtualDirectory>
   <VirtualDirectory Name="build">
     <File Name="CMakeLists.txt"/>
