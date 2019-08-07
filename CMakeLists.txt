@@ -44,8 +44,6 @@ install(EXPORT slam3d_ros-targets
 # 3D-Mapper
 add_executable(mapper_node
   src/mapper_node.cpp
-  src/ros_common.cpp
-  src/ros_tf.cpp
 )
 
 target_include_directories(mapper_node PRIVATE ${catkin_INCLUDE_DIRS})
@@ -56,6 +54,7 @@ target_link_libraries(mapper_node PUBLIC
   slam3d::sensor-gdal
   slam3d::solver-g2o
   visualization
+  interface
   ${catkin_LIBRARIES}
 )
 

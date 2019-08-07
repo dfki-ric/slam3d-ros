@@ -10,7 +10,6 @@
 
 #include <slam3d/core/Mapper.hpp>
 #include <slam3d/graph/boost/BoostGraph.hpp>
-#include <slam3d/sensor/pcl/PointCloudSensor.hpp>
 #include <slam3d/sensor/gdal/GpsSensor.hpp>
 #include <slam3d/solver/g2o/G2oSolver.hpp>
 
@@ -19,6 +18,7 @@
 
 #include <pcl/io/pcd_io.h>
 
+#include "PointcloudSensorRos.hpp"
 #include "GraphPublisher.hpp"
 #include "GpsPublisher.hpp"
 #include "LoopCloser.hpp"
@@ -29,7 +29,6 @@ tf::TransformBroadcaster* gTransformBroadcaster;
 tf::TransformListener* gTransformListener;
 
 ros::Publisher* gMapPublisher;
-ros::Publisher* gSignalPublisher;
 GraphPublisher* gGraphPublisher;
 GpsPublisher* gGpsPublisher;
 
@@ -37,14 +36,15 @@ LoopCloser* gLoopCloser;
 
 slam3d::BoostGraph* gGraph;
 slam3d::Mapper* gMapper;
-slam3d::PointCloudSensor* gPclSensor;
 slam3d::GpsSensor* gGpsSensor;
 slam3d::G2oSolver* gSolver;
 slam3d::G2oSolver* gPatchSolver;
+slam3d::PointCloudSensor* gPclSensor;
 
 tf::StampedTransform gOdomInMap;
 Odometry* gOdometry;
 IMU* gIMU;
+PointcloudSensorRos* gPclSensorRos;
 
 int gCount;
 double gMapResolution;
@@ -53,7 +53,6 @@ double gMapOutlierRadius;
 int gMapOutlierNeighbors;
 double gGpsCovScale;
 
-bool gUseOdometry;
 bool gAddOdomEdges;
 bool gUseImu;
 bool gSeqScanMatch;
@@ -73,18 +72,15 @@ ros::Time gLastTime;
 
 bool checkOdometry(const ros::Time& t)
 {
-	if(gUseOdometry)
+	try
 	{
-		try
-		{
-			gTransformListener->waitForTransform(gOdometryFrame, gRobotFrame, t, ros::Duration(0.1));
-			if(!gTransformListener->canTransform(gRobotFrame, gOdometryFrame, t))
-				return false;
-		}catch(tf2::TransformException &e)
-		{
-			ROS_WARN("Waiting for transform: '%s' => '%s' to become available...", gOdometryFrame.c_str(), gRobotFrame.c_str());
+		gTransformListener->waitForTransform(gOdometryFrame, gRobotFrame, t, ros::Duration(0.1));
+		if(!gTransformListener->canTransform(gRobotFrame, gOdometryFrame, t))
 			return false;
-		}
+	}catch(tf2::TransformException &e)
+	{
+		ROS_WARN("Waiting for transform: '%s' => '%s' to become available...", gOdometryFrame.c_str(), gRobotFrame.c_str());
+		return false;
 	}
 	return true;
 }
@@ -97,15 +93,8 @@ void publishTransforms(const ros::Time& t)
 		ROS_ERROR("Current pose from mapper has 0 determinant!");
 	}
 
-	if(gUseOdometry)
-	{
-		gOdomInMap.stamp_ = t;
-		gTransformBroadcaster->sendTransform(gOdomInMap);
-	}else
-	{
-		tf::StampedTransform robot_in_map(eigen2tf(current), t, gMapFrame, gRobotFrame);
-		gTransformBroadcaster->sendTransform(robot_in_map);
-	}
+	gOdomInMap.stamp_ = t;
+	gTransformBroadcaster->sendTransform(gOdomInMap);
 }
 
 void updateOdomInMap(const ros::Time& t)
@@ -175,9 +164,6 @@ void receiveGPS(const sensor_msgs::NavSatFix::ConstPtr& gps)
 
 void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 {
-	ROS_DEBUG("Received scan");
-	gSignalPublisher->publish(std_msgs::Empty());
-
 	// Get the pose of the laser scanner
 	ros::Time t;
 	t.fromNSec(pcl->header.stamp * 1000);
@@ -203,30 +189,8 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	if(!checkOdometry(t))
 		return;
 
-	slam3d::PointCloud::Ptr cloud;
-	if(gScanResolution > 0)
+	if(gPclSensorRos->addScanWithOdometry(pcl, tf2eigen(laser_pose), gOdometry->getPose(fromRosTime(t))))
 	{
-		cloud = gPclSensor->downsample(pcl, gScanResolution);
-	}else
-	{	
-		cloud = slam3d::PointCloud::Ptr(new slam3d::PointCloud(*pcl));
-	}
-	
-	bool added;
-	slam3d::PointCloudMeasurement::Ptr m(
-		new slam3d::PointCloudMeasurement(cloud, gRobotName, gSensorName, tf2eigen(laser_pose)));
-
-	if(gUseOdometry)
-	{
-		added = gPclSensor->addMeasurement(m, gOdometry->getPose(m->getTimestamp()), gSeqScanMatch);
-	}else
-	{
-		added = gPclSensor->addMeasurement(m);
-	}
-	
-	if(added)
-	{
-		gPclSensor->linkLastToNeighbors(true);
 		updateOdomInMap(t);
 		publishTransforms(t);
 		publishGraph(t);
@@ -234,6 +198,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	{
 		publishTransforms(t);
 	}
+
 }
 
 bool close_loop(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
@@ -314,6 +279,13 @@ int main(int argc, char **argv)
 	n.param("laser_frame", gLaserFrame, std::string("laser"));
 	n.param("gps_frame", gGpsFrame, std::string("gps"));
 
+	n.param("map_resolution", gMapResolution, 0.5);
+	n.param("map_outlier_radius", gMapOutlierRadius, 0.2);
+	n.param("map_outlier_neighbors", gMapOutlierNeighbors, 2);
+	n.param("add_odometry_edges", gAddOdomEdges, false);
+	n.param("use_imu", gUseImu, false);
+	n.param("use_gps", gUseGps, false);
+
 	// Apply tf-prefix to all frames
 	gRobotFrame = gTransformListener->resolve(gRobotFrame);
 	gOdometryFrame = gTransformListener->resolve(gOdometryFrame);
@@ -322,82 +294,22 @@ int main(int argc, char **argv)
 	gGpsFrame = gTransformListener->resolve(gGpsFrame);
 	
 	// Create the PointCloudSensor for the velodyne laser
-	n.param("sensor_name", gSensorName, std::string("PointCloudSensor"));
-	gPclSensor = new slam3d::PointCloudSensor(gSensorName, logger);
-
-	slam3d::GICPConfiguration gicp_conf;
-	n.param("icp_fine/correspondence_randomness", gicp_conf.correspondence_randomness, gicp_conf.correspondence_randomness);
-	n.param("icp_fine/euclidean_fitness_epsilon", gicp_conf.euclidean_fitness_epsilon, gicp_conf.euclidean_fitness_epsilon);
-	n.param("icp_fine/max_correspondence_distance", gicp_conf.max_correspondence_distance, gicp_conf.max_correspondence_distance);
-	n.param("icp_fine/max_fitness_score", gicp_conf.max_fitness_score, gicp_conf.max_fitness_score);
-	n.param("icp_fine/max_sensor_distance", gicp_conf.max_sensor_distance, gicp_conf.max_sensor_distance);
-	n.param("icp_fine/maximum_iterations", gicp_conf.maximum_iterations, gicp_conf.maximum_iterations);
-	n.param("icp_fine/maximum_optimizer_iterations", gicp_conf.maximum_optimizer_iterations, gicp_conf.maximum_optimizer_iterations);
-	n.param("icp_fine/orientation_sigma", gicp_conf.orientation_sigma, gicp_conf.orientation_sigma);
-	n.param("icp_fine/point_cloud_density", gicp_conf.point_cloud_density, gicp_conf.point_cloud_density);
-	n.param("icp_fine/position_sigma", gicp_conf.position_sigma, gicp_conf.position_sigma);
-	n.param("icp_fine/rotation_epsilon", gicp_conf.rotation_epsilon, gicp_conf.rotation_epsilon);
-	n.param("icp_fine/transformation_epsilon", gicp_conf.transformation_epsilon, gicp_conf.transformation_epsilon);
-	gPclSensor->setFineConfiguaration(gicp_conf);
-	
-	n.param("icp_coarse/correspondence_randomness", gicp_conf.correspondence_randomness, gicp_conf.correspondence_randomness);
-	n.param("icp_coarse/euclidean_fitness_epsilon", gicp_conf.euclidean_fitness_epsilon, gicp_conf.euclidean_fitness_epsilon);
-	n.param("icp_coarse/max_correspondence_distance", gicp_conf.max_correspondence_distance, gicp_conf.max_correspondence_distance);
-	n.param("icp_coarse/max_fitness_score", gicp_conf.max_fitness_score, gicp_conf.max_fitness_score);
-	n.param("icp_coarse/max_sensor_distance", gicp_conf.max_sensor_distance, gicp_conf.max_sensor_distance);
-	n.param("icp_coarse/maximum_iterations", gicp_conf.maximum_iterations, gicp_conf.maximum_iterations);
-	n.param("icp_coarse/maximum_optimizer_iterations", gicp_conf.maximum_optimizer_iterations, gicp_conf.maximum_optimizer_iterations);
-	n.param("icp_coarse/orientation_sigma", gicp_conf.orientation_sigma, gicp_conf.orientation_sigma);
-	n.param("icp_coarse/point_cloud_density", gicp_conf.point_cloud_density, gicp_conf.point_cloud_density);
-	n.param("icp_coarse/position_sigma", gicp_conf.position_sigma, gicp_conf.position_sigma);
-	n.param("icp_coarse/rotation_epsilon", gicp_conf.rotation_epsilon, gicp_conf.rotation_epsilon);
-	n.param("icp_coarse/transformation_epsilon", gicp_conf.transformation_epsilon, gicp_conf.transformation_epsilon);
-	gPclSensor->setCoarseConfiguaration(gicp_conf);
-
-	int loop_len;
-	n.param("min_loop_length", loop_len, 1);
-	gPclSensor->setMinLoopLength(loop_len);
-	gPclSensor->setCovarianceScale(n.param("pcl_cov_scale", 1.0));
+	n.param("sensor_name", gSensorName, std::string("PointcloudSensor"));
+	gPclSensorRos = new PointcloudSensorRos(gSensorName, gRobotName);
+	gPclSensor = gPclSensorRos->getSensor();
 
 	gMapper->registerSensor(gPclSensor);
 	
-	double radius, translation, rotation;
-	int links, range;
-
-	n.param("scan_resolution", gScanResolution, 0.5);
-	n.param("map_resolution", gMapResolution, 0.5);
-	n.param("neighbor_radius", radius, 5.0);
-	n.param("max_neighbor_links", links, 5);
-	n.param("patch_building_range", range, 5);
-	n.param("map_outlier_radius", gMapOutlierRadius, 0.2);
-	n.param("map_outlier_neighbors", gMapOutlierNeighbors, 2);
-	n.param("min_translation", translation, 0.5);
-	n.param("min_rotation", rotation, 0.1);
-	n.param("use_odometry", gUseOdometry, false);
-	n.param("add_odometry_edges", gAddOdomEdges, false);
-	n.param("use_imu", gUseImu, false);
-	n.param("use_seq_scan_matching", gSeqScanMatch, true);
-	n.param("use_gps", gUseGps, false);
-
-	gPclSensor->setNeighborRadius(radius, links);
-	gPclSensor->setMinPoseDistance(translation, rotation);
-	gPclSensor->setPatchBuildingRange(range);
-
 	gPatchSolver = new slam3d::G2oSolver(logger);
 	gPclSensor->setPatchSolver(gPatchSolver);
 
-	if(gUseOdometry)
+
+	gOdometry = new Odometry(gGraph, logger);
+	gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
+	gOdometry->setCovarianceScale(n.param("odo_cov_scale", 1.0));
+	if(gAddOdomEdges)
 	{
-		gOdometry = new Odometry(gGraph, logger);
-		gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
-		gOdometry->setCovarianceScale(n.param("odo_cov_scale", 1.0));
-		if(gAddOdomEdges)
-		{
-			gMapper->registerPoseSensor(gOdometry);
-		}
-	}else
-	{
-		gOdometry = NULL;
+		gMapper->registerPoseSensor(gOdometry);
 	}
 
 	if(gUseImu)
@@ -417,7 +329,6 @@ int main(int argc, char **argv)
 	ros::ServiceServer optSrv = n.advertiseService("optimize", &optimize);
 	ros::ServiceServer showSrv = n.advertiseService("show_map", &show_map);
 	ros::ServiceServer writeSrv = n.advertiseService("write_graph", &write_graph);
-	ros::Publisher signalPub = n.advertise<std_msgs::Empty>("trigger", 1, true);
 	ros::Subscriber gpsSub;
 
 	// Create GpsSensor
@@ -438,7 +349,6 @@ int main(int argc, char **argv)
 	ros::ServiceServer loopSrv = n.advertiseService("close_loop", &close_loop);
 	
 	gMapPublisher = &pclPub;
-	gSignalPublisher = &signalPub;
 
 	gGraphPublisher = new GraphPublisher(gGraph);
 	gGraphPublisher->addNodeSensor(gSensorName, 0,1,0);

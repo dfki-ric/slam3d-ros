@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Map1/Autocompute Value Bounds1
+        - /EdgesPCL1
         - /Odometry1/Shape1
       Splitter Ratio: 0.5272729992866516
     Tree Height: 617
@@ -68,9 +69,9 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 5
-        Min Value: -2
-        Value: false
+        Max Value: 6.952763080596924
+        Min Value: -43.397979736328125
+        Value: true
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
@@ -259,16 +260,16 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /edgesOdometry
       Name: EdgesOdometry
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /edgesPointCloudSensor
+      Marker Topic: /edgesvelodyne
       Name: EdgesPCL
       Namespaces:
         "": true
@@ -279,7 +280,7 @@ Visualization Manager:
       Marker Topic: /edgesGpsSensor
       Name: EdgesGPS
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -399,25 +400,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 30.416627883911133
+      Distance: 27.73078727722168
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -8.187217712402344
-        Y: 5.70683479309082
-        Z: 9.5367431640625e-6
-      Focal Shape Fixed Size: true
+        X: 0
+        Y: 0
+        Z: 0
+      Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9954466819763184
+      Pitch: 0.7853981852531433
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 1.9081467390060425
+      Yaw: 0.7853981852531433
     Saved:
       - Class: rviz/XYOrbit
         Distance: 276.3855285644531
