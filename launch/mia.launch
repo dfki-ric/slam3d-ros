@@ -8,9 +8,9 @@
 	</node>
 
 	<node name="NodeletManager" pkg="nodelet" type="nodelet" args="manager" />
-	<node name="CropBox" pkg="nodelet" type="nodelet" args="load pcl/CropBox NodeletManager">
+	<node name="CropBoxMin" pkg="nodelet" type="nodelet" args="load pcl/CropBox NodeletManager">
 		<remap from="~input" to="velodyne/velodyne_points" />
-		<remap from="~output" to="filtered_points" />
+		<remap from="~output" to="min_filtered_points" />
 		<param name="min_x" value="-2.0" />
 		<param name="max_x" value="2.0" />
 		<param name="min_y" value="-2.0" />
@@ -18,6 +18,18 @@
 		<param name="min_z" value="-2.0" />
 		<param name="max_z" value="2.0" />
 		<param name="negative" value="true" />
+	</node>
+
+	<node name="CropBoxMax" pkg="nodelet" type="nodelet" args="load pcl/CropBox NodeletManager">
+		<remap from="~input" to="min_filtered_points" />
+		<remap from="~output" to="filtered_points" />
+		<param name="min_x" value="-30.0" />
+		<param name="max_x" value="30.0" />
+		<param name="min_y" value="-30.0" />
+		<param name="max_y" value="30.0" />
+		<param name="min_z" value="-5.0" />
+		<param name="max_z" value="5.0" />
+		<param name="negative" value="false" />
 	</node>
 
 	<rosparam file="$(find slam3d_ros)/param/mia_oval_track.yaml"/>
