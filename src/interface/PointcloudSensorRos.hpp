@@ -1,9 +1,8 @@
-#include <ros/ros.h>
 #include <slam3d/sensor/pcl/PointCloudSensor.hpp>
 
-#include "ros_common.hpp"
+#include "SensorRos.hpp"
 
-class PointcloudSensorRos
+class PointcloudSensorRos : SensorRos
 {
 public:
 	PointcloudSensorRos(const std::string& sensor, const std::string robot);
@@ -23,7 +22,4 @@ protected:
 private:
 	double mScanResolution;
 	bool mSeqScanMatch;
-	
-	std::string mRobotName;
-	std::string mSensorName;
 };

@@ -112,6 +112,8 @@
       <File Name="src/interface/ros_common.hpp"/>
       <File Name="src/interface/ros_tf.cpp"/>
       <File Name="src/interface/ros_tf.hpp"/>
+      <File Name="src/interface/SensorRos.hpp"/>
+      <File Name="src/interface/SensorRos.cpp"/>
     </VirtualDirectory>
   </VirtualDirectory>
   <VirtualDirectory Name="build">
