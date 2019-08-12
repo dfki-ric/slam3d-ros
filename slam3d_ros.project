@@ -105,15 +105,13 @@
     </VirtualDirectory>
     <File Name="src/CMakeLists.txt"/>
     <VirtualDirectory Name="interface">
-      <File Name="src/interface/PointcloudSensorRos.cpp"/>
-      <File Name="src/interface/PointcloudSensorRos.hpp"/>
       <File Name="src/interface/CMakeLists.txt"/>
       <File Name="src/interface/ros_common.cpp"/>
       <File Name="src/interface/ros_common.hpp"/>
       <File Name="src/interface/ros_tf.cpp"/>
       <File Name="src/interface/ros_tf.hpp"/>
-      <File Name="src/interface/SensorRos.hpp"/>
-      <File Name="src/interface/SensorRos.cpp"/>
+      <File Name="src/interface/helper_functions.cpp"/>
+      <File Name="src/interface/helper_functions.hpp"/>
     </VirtualDirectory>
   </VirtualDirectory>
   <VirtualDirectory Name="build">

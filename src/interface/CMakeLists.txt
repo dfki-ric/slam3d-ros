@@ -1,8 +1,7 @@
 add_library(interface
-	SensorRos.cpp
-	PointcloudSensorRos.cpp
 	ros_common.cpp
 	ros_tf.cpp
+	helper_functions.cpp
 )
 
 target_include_directories(interface
@@ -21,8 +20,9 @@ target_link_libraries(interface
 ## Install header files
 install(
 	FILES
-		SensorRos.hpp
-		PointcloudSensorRos.hpp
+		ros_common.hpp
+		ros_tf.hpp
+		helper_functions.hpp
 	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 

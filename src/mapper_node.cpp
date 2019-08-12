@@ -18,12 +18,12 @@
 
 #include <pcl/io/pcd_io.h>
 
-#include "PointcloudSensorRos.hpp"
 #include "GraphPublisher.hpp"
 #include "GpsPublisher.hpp"
 #include "LoopCloser.hpp"
 #include "ros_common.hpp"
 #include "ros_tf.hpp"
+#include "helper_functions.hpp"
 
 tf::TransformBroadcaster* gTransformBroadcaster;
 tf::TransformListener* gTransformListener;
@@ -44,13 +44,10 @@ slam3d::PointCloudSensor* gPclSensor;
 tf::StampedTransform gOdomInMap;
 Odometry* gOdometry;
 IMU* gIMU;
-PointcloudSensorRos* gPclSensorRos;
+//PointcloudSensorRos* gPclSensorRos;
 
 int gCount;
-double gMapResolution;
 double gScanResolution;
-double gMapOutlierRadius;
-int gMapOutlierNeighbors;
 double gGpsCovScale;
 
 bool gAddOdomEdges;
@@ -189,16 +186,28 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	if(!checkOdometry(t))
 		return;
 
-	if(gPclSensorRos->addScanWithOdometry(pcl, tf2eigen(laser_pose), gOdometry->getPose(fromRosTime(t))))
+	slam3d::PointCloud::Ptr cloud;
+	if(gScanResolution > 0)
+	{
+		cloud = gPclSensor->downsample(pcl, gScanResolution);
+	}else
+	{	
+		cloud = slam3d::PointCloud::Ptr(new slam3d::PointCloud(*pcl));
+	}
+	
+	slam3d::PointCloudMeasurement::Ptr m(
+		new slam3d::PointCloudMeasurement(cloud, gRobotName, gSensorName, tf2eigen(laser_pose)));
+	
+	if(gPclSensor->addMeasurement(m, gOdometry->getPose(fromRosTime(t)), gSeqScanMatch))
 	{
 		updateOdomInMap(t);
 		publishTransforms(t);
 		publishGraph(t);
+		gPclSensor->linkLastToNeighbors(true);
 	}else
 	{
 		publishTransforms(t);
 	}
-
 }
 
 bool close_loop(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
@@ -226,9 +235,7 @@ bool optimize(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 
 void build_map(VertexObjectList vertices)
 {
-	PointCloud::Ptr accu = gPclSensor->getAccumulatedCloud(vertices);
-	PointCloud::Ptr cleaned = gPclSensor->removeOutliers(accu, gMapOutlierRadius, gMapOutlierNeighbors);
-	PointCloud::Ptr downsampled = gPclSensor->downsample(cleaned, gMapResolution);
+	PointCloud::Ptr downsampled = gPclSensor->buildMap(vertices);
 	downsampled->header.frame_id = gMapFrame;
 	gMapPublisher->publish(downsampled);
 	
@@ -279,12 +286,12 @@ int main(int argc, char **argv)
 	n.param("laser_frame", gLaserFrame, std::string("laser"));
 	n.param("gps_frame", gGpsFrame, std::string("gps"));
 
-	n.param("map_resolution", gMapResolution, 0.5);
-	n.param("map_outlier_radius", gMapOutlierRadius, 0.2);
-	n.param("map_outlier_neighbors", gMapOutlierNeighbors, 2);
 	n.param("add_odometry_edges", gAddOdomEdges, false);
 	n.param("use_imu", gUseImu, false);
 	n.param("use_gps", gUseGps, false);
+
+	n.param("use_seq_scan_matching", gSeqScanMatch, true);
+	n.param("scan_resolution", gScanResolution, 0.5);
 
 	// Apply tf-prefix to all frames
 	gRobotFrame = gTransformListener->resolve(gRobotFrame);
@@ -295,8 +302,8 @@ int main(int argc, char **argv)
 	
 	// Create the PointCloudSensor for the velodyne laser
 	n.param("sensor_name", gSensorName, std::string("PointcloudSensor"));
-	gPclSensorRos = new PointcloudSensorRos(gSensorName, gRobotName);
-	gPclSensor = gPclSensorRos->getSensor();
+	gPclSensor = new slam3d::PointCloudSensor(gSensorName, logger);
+	readPointcloudSensorParameters(n, gPclSensor);
 
 	gMapper->registerSensor(gPclSensor);
 	
@@ -335,12 +342,12 @@ int main(int argc, char **argv)
 	if(gUseGps)
 	{
 		n.param("gps_name", gGpsName, std::string("GpsSensor"));
+		n.param("gps_cov_scale", gGpsCovScale, 1.0);
 		gGpsSensor = new slam3d::GpsSensor(gGpsName, logger);
-		gGpsSensor->setMinPoseDistance(n.param("gps_min_distance", 10.0), 0);
 		gGpsSensor->initCoordTransform();
+		readSensorParameters(n, gGpsSensor);
 		gMapper->registerSensor(gGpsSensor);
 		gpsSub = n.subscribe<sensor_msgs::NavSatFix>("gps", 10, &receiveGPS);
-		n.param("gps_cov_scale", gGpsCovScale, 1.0);
 	}else
 	{
 		gGraph->fixNext();

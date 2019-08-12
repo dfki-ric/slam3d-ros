@@ -1,17 +1,13 @@
 ## Mapper params
 ##################################################
 scan_resolution: 0.1
-map_resolution: 0.25
+use_seq_scan_matching: false
 
-map_outlier_radius: 1.0
-map_outlier_neighbors: 1
 optimization_rate: 20
 multi_threaded: true
 use_space_mouse: false
 
 use_imu: true
-use_gps: true
-gps_min_distance: 2.5
 
 use_odometry: true
 add_odometry_edges: true
@@ -24,7 +20,6 @@ laser_frame: "velodyne"
 gps_frame: "xsens_mt0"
 
 odo_cov_scale: 0.01
-gps_cov_scale: 25.0
 imu_cov_scale: 1000.0
 lcl_cov_scale: 0.1
 
@@ -32,16 +27,30 @@ lcl_cov_scale: 0.1
 ##################################################
 sensor_name: "velodyne"
 
+velodyne/min_translation: 1.0
+velodyne/min_rotation: 2.0
+velodyne/cov_scale: 0.0001
+
+velodyne/neighbor_radius: 5.0
+velodyne/max_neighbor_links: 0
+velodyne/patch_building_range: 0
+velodyne/min_loop_length: 10
+
 velodyne/icp_fine/max_correspondence_distance: 1.0
 velodyne/icp_fine/max_fitness_score: 3.0
 velodyne/icp_fine/maximum_iterations: 50
 velodyne/icp_fine/point_cloud_density: 0.25
 
-velodyne/cov_scale: 0.0001
-velodyne/neighbor_radius: 5.0
-velodyne/max_neighbor_links: 0
-velodyne/patch_building_range: 0
-velodyne/min_translation: 1.0
-velodyne/min_rotation: 2.0
-velodyne/min_loop_length: 10
-velodyne/use_seq_scan_matching: false
+velodyne/map_outlier_radius: 1.0
+velodyne/map_outlier_neighbors: 1
+velodyne/map_resolution: 0.25
+
+## GPS params
+##################################################
+gps_name: "gps"
+use_gps: true
+
+gps/min_translation: 2.5
+gps/min_rotation: 2.0
+#gps/cov_scale: 25.0
+gps_cov_scale: 25.0
