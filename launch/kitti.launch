@@ -1,14 +1,14 @@
 <launch>
 
 	<!-- Publisher for logged scans -->
-	<param name="replay_path" value="/path/to/scan/diroctory/..." />
+	<param name="replay_path" value="/media/data/kitti/00/velodyne" />
 	<param name="replay_rate" value="0" />
 	<node name="Publisher" pkg="slam3d_ros" type="velodyne_publisher" />
 
 	<!-- Mapper -->
-	<rosparam file="$(find slam3d_ros)/param/kitti_mapper.yaml"/>
-	<node name="Mapper" pkg="slam3d_ros" type="mapper_node">
+	<node name="Mapper" pkg="slam3d_ros" type="kitti_mapper">
 		<remap from="pointcloud" to="velodyne_scan" />
+		<rosparam file="$(find slam3d_ros)/param/kitti_mapper.yaml"/>
 	</node>
 
 	<!-- RVIZ to view the visualization -->

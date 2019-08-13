@@ -81,6 +81,17 @@ add_executable(kitti_publisher src/kitti_publisher.cpp)
 target_include_directories(kitti_publisher PRIVATE ${catkin_INCLUDE_DIRS})
 target_link_libraries(kitti_publisher ${catkin_LIBRARIES})
 
+add_executable(kitti_mapper src/kitti_mapper.cpp)
+target_include_directories(kitti_mapper PRIVATE ${catkin_INCLUDE_DIRS})
+target_link_libraries(kitti_mapper PUBLIC
+  slam3d::graph-boost
+  slam3d::sensor-pcl
+  slam3d::solver-g2o
+  visualization
+  interface
+  ${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############

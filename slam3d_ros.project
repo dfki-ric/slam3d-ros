@@ -113,6 +113,7 @@
       <File Name="src/interface/helper_functions.cpp"/>
       <File Name="src/interface/helper_functions.hpp"/>
     </VirtualDirectory>
+    <File Name="src/kitti_mapper.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="build">
     <File Name="CMakeLists.txt"/>

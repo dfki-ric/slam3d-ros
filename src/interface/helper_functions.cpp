@@ -1,16 +1,19 @@
 #include "helper_functions.hpp"
 
+
 #include <boost/format.hpp>
 
-void readSensorParameters(ros::NodeHandle& n, slam3d::Sensor* sensor)
+void readSensorParameters(ros::NodeHandle& parent, slam3d::Sensor* sensor)
 {
+	ros::NodeHandle n(parent, sensor->getName());
 	sensor->setCovarianceScale(n.param("cov_scale", 1.0));
 	sensor->setMinPoseDistance(n.param("min_translation", 0.5), n.param("min_rotation", 0.1));
 }
 
-void readPointcloudSensorParameters(ros::NodeHandle& n, slam3d::PointCloudSensor* pcs)
+void readPointcloudSensorParameters(ros::NodeHandle& parent, slam3d::PointCloudSensor* pcs)
 {
-	readSensorParameters(n, pcs);
+	ros::NodeHandle n(parent, pcs->getName());
+	readSensorParameters(parent, pcs);
 	
 	slam3d::GICPConfiguration gicp_conf;
 	n.param("icp_fine/correspondence_randomness", gicp_conf.correspondence_randomness, gicp_conf.correspondence_randomness);
