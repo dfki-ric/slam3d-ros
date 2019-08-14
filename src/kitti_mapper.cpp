@@ -17,8 +17,6 @@
 #include <iostream>
 #include <thread>
 
-#include <pcl/io/pcd_io.h>
-
 #include "GraphPublisher.hpp"
 #include "GpsPublisher.hpp"
 #include "ros_common.hpp"
@@ -32,8 +30,6 @@
 #define SENSOR_FRAME "velodyne_laser"
 
 tf::TransformBroadcaster* gTransformBroadcaster;
-
-ros::Time gLastTime;
 ros::Publisher* gMapPublisher;
 ros::Publisher* gSignalPublisher;
 GraphPublisher* gGraphPublisher;
@@ -69,16 +65,8 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	ROS_DEBUG("Received scan");
 	gSignalPublisher->publish(std_msgs::Empty());
 
-	// Get the pose of the laser scanner
 	ros::Time t;
 	t.fromNSec(pcl->header.stamp * 1000);
-	
-	if(t < gLastTime)
-	{
-		ROS_WARN("Received late Scan!");
-		return;
-	}
-	gLastTime = t;
 
 	slam3d::PointCloud::Ptr cloud;
 	if(gScanResolution > 0)
@@ -97,19 +85,12 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 		gPclSensor->linkLastToNeighbors(true);
 		publishTransforms(t);
 		publishGraph(t);
-	}else
-	{
-		publishTransforms(t);
 	}
 }
 
 bool optimize(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 {
-	gSolver->saveGraph("input_graph.g2o");
 	bool success = gGraph->optimize();
-
-	publishTransforms(gLastTime);
-	publishGraph(gLastTime);
 	return true;
 }
 
@@ -118,8 +99,6 @@ void build_map(VertexObjectList vertices)
 	PointCloud::Ptr downsampled = gPclSensor->buildMap(vertices);
 	downsampled->header.frame_id = MAP_FRAME;
 	gMapPublisher->publish(downsampled);
-	
-	pcl::io::savePCDFileASCII("slam3d_map.pcd", *downsampled);
 }
 
 bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
@@ -131,38 +110,39 @@ bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 	return true;
 }
 
-bool write_graph(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
-{
-	gGraph->writeGraphToFile("pose_graph");
-	return true;
-}
-
 int main(int argc, char **argv)
 {
+	// Create the ROS node
 	ros::init(argc, argv, "mapper");
 	ros::NodeHandle n;
 	ros::NodeHandle pn("~/");
-	gLastTime = ros::Time(0);
+	pn.param("scan_resolution", gScanResolution, 0.5);
 	gTransformBroadcaster = new tf::TransformBroadcaster;
 	
+	// Clock and Logger to be used by all slam3d components
 	slam3d::Clock* clock = new RosClock();
 	slam3d::Logger* logger = new RosLogger();
 	
+	// Create the Graph, that will hold all mapping information
 	gGraph = new slam3d::BoostGraph(logger);
-	gMapper = new slam3d::Mapper(gGraph, logger);
-	gSolver = new slam3d::G2oSolver(logger);
+	
+	// We have no absolute positioning (e.g. GPS), so we fix the 
+	// first node in the graph
+	gGraph->fixNext();
 
-	int rate;
-	pn.param("optimization_rate", rate, 10);
-	gGraph->setSolver(gSolver, rate);
+	// Create the Mapper object
+	gMapper = new slam3d::Mapper(gGraph, logger);
+
+	// Create the Backend for global graph optimization
+	gSolver = new slam3d::G2oSolver(logger);
+	gGraph->setSolver(gSolver, pn.param("optimization_rate", 10));
 	
 	// Create the PointCloudSensor for the velodyne laser
 	gPclSensor = new slam3d::PointCloudSensor(SENSOR_NAME, logger);
 	readPointcloudSensorParameters(pn, gPclSensor);
 	gMapper->registerSensor(gPclSensor);
 	
-	pn.param("scan_resolution", gScanResolution, 0.5);
-	
+	// Create a solver to optimize local scan patches
 	gPatchSolver = new slam3d::G2oSolver(logger);
 	gPclSensor->setPatchSolver(gPatchSolver);
 
@@ -171,18 +151,15 @@ int main(int argc, char **argv)
 	ros::Subscriber pclSub = n.subscribe<slam3d::PointCloud>("pointcloud", 10, &receivePointCloud);
 	ros::ServiceServer optSrv = n.advertiseService("optimize", &optimize);
 	ros::ServiceServer showSrv = n.advertiseService("show_map", &show_map);
-	ros::ServiceServer writeSrv = n.advertiseService("write_graph", &write_graph);
 	ros::Publisher signalPub = n.advertise<std_msgs::Empty>("trigger", 1, true);
 	
 	gMapPublisher = &pclPub;
 	gSignalPublisher = &signalPub;
 
+	// Create the visualizer for the nodes and edges
 	gGraphPublisher = new GraphPublisher(gGraph);
 	gGraphPublisher->addNodeSensor(SENSOR_NAME, 0,1,0);
 	gGraphPublisher->addEdgeSensor(SENSOR_NAME);
-	
-	ROS_INFO("Mapper ready!");
-	ROS_WARN(" - ScanResolution: %.2f", gScanResolution);
 	
 	ros::spin();
 	

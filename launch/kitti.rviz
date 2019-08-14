@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /Map1
         - /Map1/Autocompute Value Bounds1
         - /Edges1
         - /Image1
@@ -88,7 +89,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 1
+      Size (Pixels): 2
       Size (m): 0.20000000298023224
       Style: Points
       Topic: /map
@@ -204,25 +205,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 59.44707107543945
+      Distance: 54.73565673828125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -8.16348648071289
-        Y: 9.561305046081543
-        Z: 2.9426988476188853e-5
+        X: 0
+        Y: 0
+        Z: 0
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8353983163833618
-      Target Frame: map
+      Pitch: 0.7853981852531433
+      Target Frame: velodyne_laser
       Value: XYOrbit (rviz)
-      Yaw: 2.4453983306884766
+      Yaw: 0.7853981852531433
     Saved: ~
 Window Geometry:
   Displays:
