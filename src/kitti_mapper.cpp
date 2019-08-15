@@ -41,6 +41,7 @@ slam3d::G2oSolver* gSolver;
 slam3d::G2oSolver* gPatchSolver;
 
 double gScanResolution;
+bool gMultiThreaded;
 
 void publishTransforms(const ros::Time& t)
 {
@@ -82,7 +83,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	
 	if(gPclSensor->addMeasurement(m))
 	{
-		gPclSensor->linkLastToNeighbors(true);
+		gPclSensor->linkLastToNeighbors(gMultiThreaded);
 		publishTransforms(t);
 		publishGraph(t);
 	}
@@ -117,6 +118,7 @@ int main(int argc, char **argv)
 	ros::NodeHandle n;
 	ros::NodeHandle pn("~/");
 	pn.param("scan_resolution", gScanResolution, 0.5);
+	pn.param("multi_threaded", gMultiThreaded, true);
 	gTransformBroadcaster = new tf::TransformBroadcaster;
 	
 	// Clock and Logger to be used by all slam3d components
