@@ -83,9 +83,9 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	
 	if(gPclSensor->addMeasurement(m))
 	{
-		gPclSensor->linkLastToNeighbors(gMultiThreaded);
 		publishTransforms(t);
 		publishGraph(t);
+		gPclSensor->linkLastToNeighbors(gMultiThreaded);
 	}
 }
 
