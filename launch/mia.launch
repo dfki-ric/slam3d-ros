@@ -33,7 +33,7 @@
 	</node>
 
 	<node name="Mapper" pkg="slam3d_ros" type="mapper_node" >
-		<rosparam file="$(find slam3d_ros)/param/mia_oval_track.yaml"/>
+		<rosparam file="$(find slam3d_ros)/param/mia_mapper.yaml"/>
 		<remap from="pointcloud" to="filtered_points" />
 		<remap from="gps" to="/xsens/mt0/fix" />
 	</node>
