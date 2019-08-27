@@ -204,26 +204,26 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/XYOrbit
-      Distance: 54.73565673828125
+      Class: rviz/Orbit
+      Distance: 69.69296264648438
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
-      Focal Shape Fixed Size: false
+        X: 249.65638732910156
+        Y: 17.863773345947266
+        Z: -7.591251850128174
+      Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7853981852531433
-      Target Frame: velodyne_laser
-      Value: XYOrbit (rviz)
-      Yaw: 0.7853981852531433
+      Pitch: 1.5697963237762451
+      Target Frame: map
+      Value: Orbit (rviz)
+      Yaw: 0.9203967452049255
     Saved: ~
 Window Geometry:
   Displays:
