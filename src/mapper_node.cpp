@@ -50,7 +50,6 @@ int gCount;
 double gScanResolution;
 double gGpsCovScale;
 
-bool gAddOdomEdges;
 bool gUseImu;
 bool gSeqScanMatch;
 bool gUseGps;
@@ -261,6 +260,7 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "mapper");
 	ros::NodeHandle n;
+	ros::NodeHandle pn("~/");
 	
 	gCount = 0;
 	gLastTime = ros::Time(0);
@@ -276,22 +276,21 @@ int main(int argc, char **argv)
 	gSolver = new slam3d::G2oSolver(logger);
 
 	int rate;
-	n.param("optimization_rate", rate, 10);
+	pn.param("optimization_rate", rate, 10);
 	gGraph->setSolver(gSolver, rate);
 	
-	n.param("robot_name", gRobotName, std::string("Robot"));
-	n.param("odometry_frame", gOdometryFrame, std::string("odometry"));
-	n.param("robot_frame", gRobotFrame, std::string("robot"));
-	n.param("map_frame", gMapFrame, std::string("map"));
-	n.param("laser_frame", gLaserFrame, std::string("laser"));
-	n.param("gps_frame", gGpsFrame, std::string("gps"));
+	pn.param("robot_name", gRobotName, std::string("Robot"));
+	pn.param("odometry_frame", gOdometryFrame, std::string("odometry"));
+	pn.param("robot_frame", gRobotFrame, std::string("robot"));
+	pn.param("map_frame", gMapFrame, std::string("map"));
+	pn.param("laser_frame", gLaserFrame, std::string("laser"));
+	pn.param("gps_frame", gGpsFrame, std::string("gps"));
 
-	n.param("add_odometry_edges", gAddOdomEdges, false);
-	n.param("use_imu", gUseImu, false);
-	n.param("use_gps", gUseGps, false);
+	pn.param("use_imu", gUseImu, false);
+	pn.param("use_gps", gUseGps, false);
 
-	n.param("use_seq_scan_matching", gSeqScanMatch, true);
-	n.param("scan_resolution", gScanResolution, 0.5);
+	pn.param("use_seq_scan_matching", gSeqScanMatch, true);
+	pn.param("scan_resolution", gScanResolution, 0.5);
 
 	// Apply tf-prefix to all frames
 	gRobotFrame = gTransformListener->resolve(gRobotFrame);
@@ -301,9 +300,9 @@ int main(int argc, char **argv)
 	gGpsFrame = gTransformListener->resolve(gGpsFrame);
 	
 	// Create the PointCloudSensor for the velodyne laser
-	n.param("sensor_name", gSensorName, std::string("PointcloudSensor"));
+	pn.param("sensor_name", gSensorName, std::string("PointcloudSensor"));
 	gPclSensor = new slam3d::PointCloudSensor(gSensorName, logger);
-	readPointcloudSensorParameters(n, gPclSensor);
+	readPointcloudSensorParameters(pn, gPclSensor);
 
 	gMapper->registerSensor(gPclSensor);
 	
@@ -314,16 +313,13 @@ int main(int argc, char **argv)
 	gOdometry = new Odometry(gGraph, logger);
 	gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
 	gOdometry->setCovarianceScale(n.param("odo_cov_scale", 1.0));
-	if(gAddOdomEdges)
-	{
-		gMapper->registerPoseSensor(gOdometry);
-	}
+	gMapper->registerPoseSensor(gOdometry);
 
 	if(gUseImu)
 	{
 		gIMU = new IMU(gGraph, logger);
 		gIMU->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
-		gIMU->setCovarianceScale(n.param("imu_cov_scale", 1.0));
+		gIMU->setCovarianceScale(pn.param("imu_cov_scale", 1.0));
 		gMapper->registerPoseSensor(gIMU);
 	}else
 	{
@@ -341,11 +337,11 @@ int main(int argc, char **argv)
 	// Create GpsSensor
 	if(gUseGps)
 	{
-		n.param("gps_name", gGpsName, std::string("GpsSensor"));
-		n.param("gps_cov_scale", gGpsCovScale, 1.0);
+		pn.param("gps_name", gGpsName, std::string("GpsSensor"));
+		pn.param("gps_cov_scale", gGpsCovScale, 1.0);
 		gGpsSensor = new slam3d::GpsSensor(gGpsName, logger);
 		gGpsSensor->initCoordTransform();
-		readSensorParameters(n, gGpsSensor);
+		readSensorParameters(pn, gGpsSensor);
 		gMapper->registerSensor(gGpsSensor);
 		gpsSub = n.subscribe<sensor_msgs::NavSatFix>("gps", 10, &receiveGPS);
 	}else
@@ -367,8 +363,8 @@ int main(int argc, char **argv)
 
 	gGpsPublisher = new GpsPublisher(gGraph);
 	
-	gLoopCloser = new LoopCloser(gMapper, gPclSensor, n.param("use_space_mouse", false));
-	gLoopCloser->setCovarianceScale(n.param("lcl_cov_scale", 1.0));
+	gLoopCloser = new LoopCloser(gMapper, gPclSensor, pn.param("use_space_mouse", false));
+	gLoopCloser->setCovarianceScale(pn.param("lcl_cov_scale", 1.0));
 
 	ROS_INFO("Mapper ready!");
 	

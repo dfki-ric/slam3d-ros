@@ -1,16 +1,12 @@
 ## Mapper params
 ##################################################
-scan_resolution: 0.1
-use_seq_scan_matching: false
+scan_resolution: 0.5
+use_seq_scan_matching: true
+use_imu: true
 
 optimization_rate: 20
 multi_threaded: true
 use_space_mouse: false
-
-use_imu: true
-
-use_odometry: true
-add_odometry_edges: true
 
 robot_name: "mia"
 odometry_frame: "odom"
@@ -31,26 +27,31 @@ velodyne/min_translation: 1.0
 velodyne/min_rotation: 2.0
 velodyne/cov_scale: 0.0001
 
-velodyne/neighbor_radius: 5.0
-velodyne/max_neighbor_links: 0
-velodyne/patch_building_range: 0
-velodyne/min_loop_length: 10
+velodyne/neighbor_radius: 10.0
+velodyne/max_neighbor_links: 1
+velodyne/patch_building_range: 5
+velodyne/min_loop_length: 50
 
-velodyne/icp_fine/max_correspondence_distance: 1.0
-velodyne/icp_fine/max_fitness_score: 3.0
-velodyne/icp_fine/maximum_iterations: 50
-velodyne/icp_fine/point_cloud_density: 0.25
+velodyne/fine/max_correspondence_distance: 1.0
+velodyne/fine/max_fitness_score: 3.0
+velodyne/fine/maximum_iterations: 50
+velodyne/fine/point_cloud_density: 1.0
+
+velodyne/fine/max_correspondence_distance: 5.0
+velodyne/fine/max_fitness_score: 5.0
+velodyne/fine/maximum_iterations: 25
+velodyne/fine/point_cloud_density: 2.0
 
 velodyne/map_outlier_radius: 1.0
 velodyne/map_outlier_neighbors: 1
-velodyne/map_resolution: 0.25
+velodyne/map_resolution: 0.5
 
 ## GPS params
 ##################################################
 gps_name: "gps"
 use_gps: true
 
-gps/min_translation: 2.5
+gps/min_translation: 10
 gps/min_rotation: 2.0
 #gps/cov_scale: 25.0
 gps_cov_scale: 25.0
