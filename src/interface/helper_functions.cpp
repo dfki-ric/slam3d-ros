@@ -27,7 +27,7 @@ slam3d::RegistrationParameters readRegistrationParameters(ros::NodeHandle& n)
 		params.registration_algorithm = slam3d::NDT;
 	}else
 	{
-		ROS_WARN("Unknown registration algorithm '%s', using GICP instead.", algorithm);
+		ROS_WARN("Unknown registration algorithm '%s', using GICP instead.", algorithm.c_str());
 	}
 	n.param("point_cloud_density", params.point_cloud_density, params.point_cloud_density);	
 	n.param("max_fitness_score", params.max_fitness_score, params.max_fitness_score);

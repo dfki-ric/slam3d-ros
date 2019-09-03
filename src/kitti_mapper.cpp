@@ -166,6 +166,7 @@ int main(int argc, char **argv)
 	ros::spin();
 	
 	delete gGraph;
+	delete gMapper;
 	delete gGraphPublisher;
 	delete gPclSensor;
 	delete gSolver;
