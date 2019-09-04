@@ -10,41 +10,41 @@ laser_frame: "laser"
 camera_frame: "camera_rgb_optical_frame"
 
 ### Line scanner ###
-laser_name: line_scan
+laser_name: Scanner
 
-line_scan/min_translation: 0.3
-line_scan/min_rotation: 0.2
-line_scan/cov_scale: 1.0
+Scanner/min_translation: 0.3
+Scanner/min_rotation: 0.2
+Scanner/cov_scale: 1.0
 
-line_scan/neighbor_radius: 2.0
-line_scan/max_neighbor_links: 0
-line_scan/patch_building_range: 0
-line_scan/min_loop_length: 0
-line_scan/link_previous: true
+Scanner/neighbor_radius: 2.0
+Scanner/max_neighbor_links: 0
+Scanner/patch_building_range: 0
+Scanner/min_loop_length: 0
+Scanner/link_previous: true
 
 ### Camera ###
-camera_name: camera
+camera_name: DepthCamera
 
-camera/min_translation: 0.3
-camera/min_rotation: 0.2
-camera/cov_scale: 1.0
+DepthCamera/min_translation: 0.3
+DepthCamera/min_rotation: 0.2
+DepthCamera/cov_scale: 1.0
 
-camera/neighbor_radius: 3.0
-camera/max_neighbor_links: 1
-camera/patch_building_range: 3
-camera/min_loop_length: 1
-camera/link_previous: true
+DepthCamera/neighbor_radius: 3.0
+DepthCamera/max_neighbor_links: 1
+DepthCamera/patch_building_range: 3
+DepthCamera/min_loop_length: 1
+DepthCamera/link_previous: true
 
-camera/map_resolution: 0.05
-camera/map_outlier_radius: 0.2
-camera/map_outlier_neighbors: 1
+DepthCamera/map_resolution: 0.05
+DepthCamera/map_outlier_radius: 0.2
+DepthCamera/map_outlier_neighbors: 1
 
-camera/fine/max_correspondence_distance: 0.25
-camera/fine/max_fitness_score: 0.5
-camera/fine/maximum_iterations: 50
-camera/fine/point_cloud_density: 0.5
+DepthCamera/fine/max_correspondence_distance: 0.25
+DepthCamera/fine/max_fitness_score: 0.5
+DepthCamera/fine/maximum_iterations: 50
+DepthCamera/fine/point_cloud_density: 0.5
 
-camera/coarse/max_correspondence_distance: 1.0
-camera/coarse/max_fitness_score: 1.0
-camera/coarse/maximum_iterations: 50
-camera/coarse/point_cloud_density: 1.0
+DepthCamera/coarse/max_correspondence_distance: 1.0
+DepthCamera/coarse/max_fitness_score: 1.0
+DepthCamera/coarse/maximum_iterations: 50
+DepthCamera/coarse/point_cloud_density: 1.0

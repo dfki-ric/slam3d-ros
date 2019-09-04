@@ -119,7 +119,7 @@ Visualization Manager:
       Color: 204; 0; 0
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -136,15 +136,15 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Auto Size:
         Auto Size Factor: 1
         Value: true
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 11.308005332946777
-        Min Value: 2.734632968902588
+        Max Value: 18.26239776611328
+        Min Value: 10.558844566345215
         Value: true
       Axis: X
       Channel Name: intensity
@@ -156,7 +156,7 @@ Visualization Manager:
       Decay Time: 0
       Depth Map Topic: /camera/depth_registered/image_raw
       Depth Map Transport Hint: raw
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -174,7 +174,7 @@ Visualization Manager:
       Topic Filter: true
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz/Camera
       Enabled: false
       Image Rendering: overlay
@@ -206,16 +206,16 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /edgesline_scan
+      Enabled: true
+      Marker Topic: /edgesScanner
       Name: EdgesLineScan
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /edgescamera
+      Marker Topic: /edgesDepthCamera
       Name: EdgesCamera
       Namespaces:
         "": true
@@ -254,8 +254,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 4.833968162536621
-        Min Value: -0.5358710289001465
+        Max Value: 4.989776134490967
+        Min Value: -0.3244619369506836
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -308,26 +308,21 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/XYOrbit
-      Distance: 12.011944770812988
+      Angle: 0
+      Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Focal Point:
-        X: 5.000197887420654
-        Y: -2.0769577026367188
-        Z: 1.0714056770666502e-6
-      Focal Shape Fixed Size: true
-      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5897971987724304
+      Scale: 54.73566436767578
       Target Frame: <Fixed Frame>
-      Value: XYOrbit (rviz)
-      Yaw: 3.8436224460601807
+      Value: TopDownOrtho (rviz)
+      X: 8.02035903930664
+      Y: 0.14615701138973236
     Saved: ~
 Window Geometry:
   Camera:
