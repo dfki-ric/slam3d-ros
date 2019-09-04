@@ -3,13 +3,6 @@
 
 #include <boost/format.hpp>
 
-void readSensorParameters(ros::NodeHandle& parent, slam3d::Sensor* sensor)
-{
-	ros::NodeHandle n(parent, sensor->getName());
-	sensor->setCovarianceScale(n.param("cov_scale", 1.0));
-	sensor->setMinPoseDistance(n.param("min_translation", 0.5), n.param("min_rotation", 0.1));
-}
-
 slam3d::RegistrationParameters readRegistrationParameters(ros::NodeHandle& n)
 {
 	// General
@@ -51,16 +44,33 @@ slam3d::RegistrationParameters readRegistrationParameters(ros::NodeHandle& n)
 	return params;
 }
 
+void readSensorParameters(ros::NodeHandle& parent, slam3d::Sensor* sensor)
+{
+	ros::NodeHandle n(parent, sensor->getName());
+	sensor->setCovarianceScale(n.param("cov_scale", 1.0));
+	sensor->setMinPoseDistance(n.param("min_translation", 0.5), n.param("min_rotation", 0.1));
+}
+
+void readScanSensorParameters(ros::NodeHandle& parent, slam3d::ScanSensor* ss)
+{
+	// Read parameters Sensor
+	readSensorParameters(parent, ss);
+
+	// Read parameters specific to ScanSensor
+	ros::NodeHandle n(parent, ss->getName());
+	ss->setNeighborRadius(n.param("neighbor_radius", 5.0), n.param("max_neighbor_links", 5));
+	ss->setPatchBuildingRange(n.param("patch_building_range", 5));
+	ss->setMinLoopLength(n.param("min_loop_length", 1));
+	ss->setLinkPrevious(n.param("link_previous", true));
+}
+
 void readPointcloudSensorParameters(ros::NodeHandle& parent, slam3d::PointCloudSensor* pcs)
 {
-	// Read parameters for all sensors
-	readSensorParameters(parent, pcs);
+	// Read parameters for ScanSensor
+	readScanSensorParameters(parent, pcs);
 	
 	// Read parameters specific to PointcloudSensor
 	ros::NodeHandle n(parent, pcs->getName());
-	pcs->setMinLoopLength(n.param("min_loop_length", 1));
-	pcs->setNeighborRadius(n.param("neighbor_radius", 5.0), n.param("max_neighbor_links", 5));
-	pcs->setPatchBuildingRange(n.param("patch_building_range", 5));
 	pcs->setMapResolution(n.param("map_resolution", 0.5));
 	pcs->setMapOutlierRemoval(n.param("map_outlier_radius", 0.2), n.param("map_outlier_neighbors", 2));
 	

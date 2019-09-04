@@ -12,10 +12,9 @@
 	</node>
 
 	<!-- Mapper -->
-	<rosparam file="$(find slam3d_ros)/param/one_loop_mapper2d.yaml"/>
-	<param name="icp_config_file" value="$(find slam3d_ros)/param/one_loop_icp.yaml" />
-
-	<node name="Mapper" pkg="slam3d_ros" type="mapper2d_node" >
+	<node name="Mapper" pkg="slam3d_ros" type="mapper2d_node" output="screen">
+		<rosparam file="$(find slam3d_ros)/param/one_loop_mapper2d.yaml"/>
+		<param name="icp_config_file" value="$(find slam3d_ros)/param/one_loop_icp.yaml" />
 		<remap from="pointcloud" to="filtered_points" />
 		<remap from="scan" to="scan" />
 	</node>

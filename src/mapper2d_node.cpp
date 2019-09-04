@@ -18,6 +18,8 @@
 
 #include "GraphPublisher.hpp"
 #include "ros_common.hpp"
+#include "ros_tf.hpp"
+#include "helper_functions.hpp"
 
 tf::TransformBroadcaster* gTransformBroadcaster;
 tf::TransformListener* gTransformListener;
@@ -47,13 +49,12 @@ std::string gMapFrame;
 std::string gLaserFrame;
 std::string gCameraFrame;
 
-double gMapResolution;
 double gScanResolution;
 double gMapOutlierRadius;
 int gMapOutlierNeighbors;
 
 slam3d::Transform gSensorPose;
-RosTfOdometry* gOdometry;
+Odometry* gOdometry;
 tf::StampedTransform gOdomInMap;
 
 typedef slam3d::PM::DataPoints::Label Label;
@@ -106,9 +107,7 @@ bool show_map(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res)
 	gMapPublisher->publish(pc_msg);
 	
 	// Show 3D map
-	PointCloud::Ptr accu = gPclSensor->getAccumulatedCloud(gGraph->getVerticesFromSensor(gPclSensor->getName()));
-	PointCloud::Ptr cleaned = gPclSensor->removeOutliers(accu, gMapOutlierRadius, gMapOutlierNeighbors);
-	PointCloud::Ptr downsampled = gPclSensor->downsample(cleaned, gMapResolution);
+	PointCloud::Ptr downsampled = gPclSensor->buildMap(gGraph->getVerticesFromSensor(gPclSensor->getName()));
 	gLogger->message(INFO, (boost::format("Map cloud has %1% points.") % downsampled->size()).str());
 	downsampled->header.frame_id = gMapFrame;
 	gCloudPublisher->publish(downsampled);
@@ -199,7 +198,9 @@ void receiveScan(const sensor_msgs::LaserScan::ConstPtr& scan)
 	// Publish the graph
 	if(added)
 	{
-		gGraphPublisher->publishGraph(scan->header.stamp, gMapFrame);
+		gGraphPublisher->publishNodes(scan->header.stamp, gMapFrame);
+		gGraphPublisher->publishEdges(gScan2DSensor->getName(), scan->header.stamp, gMapFrame);
+		gGraphPublisher->publishEdges(gPclSensor->getName(), scan->header.stamp, gMapFrame);
 	}
 }
 
@@ -239,12 +240,18 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 		ROS_ERROR("Could not add new pointcloud measurement: %s", e.what());
 		return;
 	}
+	
+	if(added)
+	{
+		gPclSensor->linkLastToNeighbors(true);
+	}
 }
 
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "mapper2d");
 	ros::NodeHandle n;
+	ros::NodeHandle pn("~/");
 	
 	gTransformBroadcaster = new tf::TransformBroadcaster;
 	gTransformListener = new tf::TransformListener();
@@ -257,12 +264,12 @@ int main(int argc, char **argv)
 	gSolver = new slam3d::G2oSolver(gLogger);
 	gGraph->setSolver(gSolver);
 	
-	n.param("robot_name", gRobotName, std::string("Robot"));
-	n.param("odometry_frame", gOdometryFrame, std::string("odometry"));
-	n.param("robot_frame", gRobotFrame, std::string("robot"));
-	n.param("map_frame", gMapFrame, std::string("map"));
-	n.param("laser_frame", gLaserFrame, std::string("laser"));
-	n.param("camera_frame", gCameraFrame, std::string("camera"));
+	pn.param("robot_name", gRobotName, std::string("Robot"));
+	pn.param("odometry_frame", gOdometryFrame, std::string("odometry"));
+	pn.param("robot_frame", gRobotFrame, std::string("robot"));
+	pn.param("map_frame", gMapFrame, std::string("map"));
+	pn.param("laser_frame", gLaserFrame, std::string("laser"));
+	pn.param("camera_frame", gCameraFrame, std::string("camera"));
 
 	// Apply tf-prefix to all frames
 	gRobotFrame = gTransformListener->resolve(gRobotFrame);
@@ -272,76 +279,29 @@ int main(int argc, char **argv)
 	
 	// Create the ScanSensor for the 2d laser
 	std::string icp_config;
-	n.param("laser_name", gLaserName, std::string("LineScanner"));
-	n.param("icp_config_file", icp_config, std::string(""));
+	pn.param("laser_name", gLaserName, std::string("LineScanner"));
+	pn.param("icp_config_file", icp_config, std::string(""));
 	gScan2DSensor = new slam3d::Scan2DSensor(gLaserName, gLogger, icp_config);
+	readScanSensorParameters(pn, gScan2DSensor);
 	gScan2DSensor->writeDebugData();
 	gMapper->registerSensor(gScan2DSensor);
-	
-	double translation;
-	double rotation;
-	n.param("min_translation", translation, 0.5);
-	n.param("min_rotation", rotation, 0.1);
-	gScan2DSensor->setMinPoseDistance(translation, rotation);
-
-	double radius;
-	int links;
-	n.param("neighbor_radius", radius, 5.0);
-	n.param("max_neighbor_links", links, 5);
-	gScan2DSensor->setNeighborRadius(radius, links);
 
 	// Create the PointcloudSensor
-	n.param("camera_name", gCameraName, std::string("DepthCam"));
+	pn.param("camera_name", gCameraName, std::string("DepthCam"));
 	gPclSensor = new PointCloudSensor(gCameraName, gLogger);
+	readPointcloudSensorParameters(pn, gPclSensor);
 	
-	slam3d::GICPConfiguration gicp_conf;
-	n.param("icp_fine/correspondence_randomness", gicp_conf.correspondence_randomness, gicp_conf.correspondence_randomness);
-	n.param("icp_fine/euclidean_fitness_epsilon", gicp_conf.euclidean_fitness_epsilon, gicp_conf.euclidean_fitness_epsilon);
-	n.param("icp_fine/max_correspondence_distance", gicp_conf.max_correspondence_distance, gicp_conf.max_correspondence_distance);
-	n.param("icp_fine/max_fitness_score", gicp_conf.max_fitness_score, gicp_conf.max_fitness_score);
-	n.param("icp_fine/max_sensor_distance", gicp_conf.max_sensor_distance, gicp_conf.max_sensor_distance);
-	n.param("icp_fine/maximum_iterations", gicp_conf.maximum_iterations, gicp_conf.maximum_iterations);
-	n.param("icp_fine/maximum_optimizer_iterations", gicp_conf.maximum_optimizer_iterations, gicp_conf.maximum_optimizer_iterations);
-	n.param("icp_fine/orientation_sigma", gicp_conf.orientation_sigma, gicp_conf.orientation_sigma);
-	n.param("icp_fine/point_cloud_density", gicp_conf.point_cloud_density, gicp_conf.point_cloud_density);
-	n.param("icp_fine/position_sigma", gicp_conf.position_sigma, gicp_conf.position_sigma);
-	n.param("icp_fine/rotation_epsilon", gicp_conf.rotation_epsilon, gicp_conf.rotation_epsilon);
-	n.param("icp_fine/transformation_epsilon", gicp_conf.transformation_epsilon, gicp_conf.transformation_epsilon);
-	gPclSensor->setFineConfiguaration(gicp_conf);
+	pn.param("scan_resolution", gScanResolution, 0.5);
 	
-	n.param("icp_coarse/correspondence_randomness", gicp_conf.correspondence_randomness, gicp_conf.correspondence_randomness);
-	n.param("icp_coarse/euclidean_fitness_epsilon", gicp_conf.euclidean_fitness_epsilon, gicp_conf.euclidean_fitness_epsilon);
-	n.param("icp_coarse/max_correspondence_distance", gicp_conf.max_correspondence_distance, gicp_conf.max_correspondence_distance);
-	n.param("icp_coarse/max_fitness_score", gicp_conf.max_fitness_score, gicp_conf.max_fitness_score);
-	n.param("icp_coarse/max_sensor_distance", gicp_conf.max_sensor_distance, gicp_conf.max_sensor_distance);
-	n.param("icp_coarse/maximum_iterations", gicp_conf.maximum_iterations, gicp_conf.maximum_iterations);
-	n.param("icp_coarse/maximum_optimizer_iterations", gicp_conf.maximum_optimizer_iterations, gicp_conf.maximum_optimizer_iterations);
-	n.param("icp_coarse/orientation_sigma", gicp_conf.orientation_sigma, gicp_conf.orientation_sigma);
-	n.param("icp_coarse/point_cloud_density", gicp_conf.point_cloud_density, gicp_conf.point_cloud_density);
-	n.param("icp_coarse/position_sigma", gicp_conf.position_sigma, gicp_conf.position_sigma);
-	n.param("icp_coarse/rotation_epsilon", gicp_conf.rotation_epsilon, gicp_conf.rotation_epsilon);
-	n.param("icp_coarse/transformation_epsilon", gicp_conf.transformation_epsilon, gicp_conf.transformation_epsilon);
-	gPclSensor->setCoarseConfiguaration(gicp_conf);
-	
-
-	n.param("scan_resolution", gScanResolution, 0.5);
-	n.param("map_resolution", gMapResolution, 0.5);
-	n.param("map_outlier_radius", gMapOutlierRadius, 0.2);
-	n.param("map_outlier_neighbors", gMapOutlierNeighbors, 2);
-
-	gPclSensor->setNeighborRadius(3.0, 1);
-	gPclSensor->setMinPoseDistance(0.5, 0.25);
-	
-	int range;
-	n.param("patch_building_range", range, 5);
 	gPatchSolver = new G2oSolver(gLogger);
-	gPclSensor->setPatchBuildingRange(range);
 	gPclSensor->setPatchSolver(gPatchSolver);
 
 	gMapper->registerSensor(gPclSensor);
+	gGraph->fixNext();
 
 	// Create the Odometry
-	gOdometry = new RosTfOdometry(gGraph, gLogger, n);
+	gOdometry = new Odometry(gGraph, gLogger);
+	gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
 	gMapper->registerPoseSensor(gOdometry);
 
 	// Subscribe to point cloud
@@ -359,13 +319,17 @@ int main(int argc, char **argv)
 	gMapPublisher = &pclPub;
 	gCloudPublisher = &cloudPub;
 	gGraphPublisher = new GraphPublisher(gGraph);
-	gGraphPublisher->addSensor(gLaserName, 0,0.8,0);
-	gGraphPublisher->addSensor(gCameraName, 0, 0, 0.8);
+	gGraphPublisher->addNodeSensor(gLaserName, 0,0.8,0);
+	gGraphPublisher->addNodeSensor(gCameraName, 0, 0, 0.8);
+	gGraphPublisher->addEdgeSensor(gOdometry->getName());
+	gGraphPublisher->addEdgeSensor(gLaserName);
+	gGraphPublisher->addEdgeSensor(gCameraName);
 
 	gLogger->message(INFO, "Mapper2D is ready!");
 	
 	ros::spin();
 	
+	delete gMapper;
 	delete gGraph;
 	delete gGraphPublisher;
 	delete gScan2DSensor;

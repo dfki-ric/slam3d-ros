@@ -51,7 +51,6 @@ double gScanResolution;
 double gGpsCovScale;
 
 bool gUseImu;
-bool gSeqScanMatch;
 bool gUseGps;
 
 std::string gRobotName;
@@ -197,7 +196,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	slam3d::PointCloudMeasurement::Ptr m(
 		new slam3d::PointCloudMeasurement(cloud, gRobotName, gSensorName, tf2eigen(laser_pose)));
 	
-	if(gPclSensor->addMeasurement(m, gOdometry->getPose(fromRosTime(t)), gSeqScanMatch))
+	if(gPclSensor->addMeasurement(m, gOdometry->getPose(fromRosTime(t))))
 	{
 		updateOdomInMap(t);
 		publishTransforms(t);
@@ -289,7 +288,6 @@ int main(int argc, char **argv)
 	pn.param("use_imu", gUseImu, false);
 	pn.param("use_gps", gUseGps, false);
 
-	pn.param("use_seq_scan_matching", gSeqScanMatch, true);
 	pn.param("scan_resolution", gScanResolution, 0.5);
 
 	// Apply tf-prefix to all frames

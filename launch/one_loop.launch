@@ -12,8 +12,8 @@
 	</node>
 
 	<!-- Mapper -->
-	<rosparam file="$(find slam3d_ros)/param/one_loop.yaml"/>
 	<node name="Mapper" pkg="slam3d_ros" type="mapper_node">
+		<rosparam file="$(find slam3d_ros)/param/one_loop.yaml"/>
 		<remap from="pointcloud" to="filtered_points" />
 	</node>
 

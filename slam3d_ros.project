@@ -132,5 +132,6 @@
     <File Name="param/mia_mapper.yaml"/>
     <File Name="param/one_loop.yaml"/>
     <File Name="param/one_loop_mapper2d.yaml"/>
+    <File Name="param/one_loop_icp.yaml"/>
   </VirtualDirectory>
 </CodeLite_Project>

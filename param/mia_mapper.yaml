@@ -1,7 +1,6 @@
 ## Mapper params
 ##################################################
 scan_resolution: 0.5
-use_seq_scan_matching: true
 use_imu: true
 
 optimization_rate: 20
@@ -31,6 +30,7 @@ velodyne/neighbor_radius: 10.0
 velodyne/max_neighbor_links: 1
 velodyne/patch_building_range: 5
 velodyne/min_loop_length: 50
+velodyne/link_previous: true
 
 velodyne/fine/max_correspondence_distance: 1.0
 velodyne/fine/max_fitness_score: 3.0
