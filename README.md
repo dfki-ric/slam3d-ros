@@ -26,3 +26,11 @@ unspecified.
 
 Build your workspace.
  - catkin build
+
+## Getting started
+To get an idea how to build your own mapping application with SLAM3D you might
+want to have a look at src/kitti_mapper.cpp for a minimalistic example. It only
+uses Pointclouds without Odometry to perform mapping based on sequential scan
+matching. A more sophisticated implemmentation is the somewhat generic
+src/mapper_node.cpp, which also uses Odometry (via tf) and GPS localization for
+a much more robust SLAM solution.
