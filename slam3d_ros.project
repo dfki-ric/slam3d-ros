@@ -93,7 +93,6 @@
     <File Name="src/mapper_node.cpp"/>
     <File Name="src/velodyne_publisher.cpp"/>
     <File Name="src/kitti_publisher.cpp"/>
-    <File Name="src/mapper2d_node.cpp"/>
     <VirtualDirectory Name="visualization">
       <File Name="src/visualization/CMakeLists.txt"/>
       <File Name="src/visualization/GpsPublisher.cpp"/>
