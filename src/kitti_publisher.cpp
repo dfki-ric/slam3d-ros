@@ -29,7 +29,7 @@ bool publishNextImage()
 	sprintf(name, "%s/image_2/%06d.png", path.c_str(), gNextCloud);
 
 	cv_bridge::CvImage cv_image;
-	cv_image.image = cv::imread(name, CV_LOAD_IMAGE_COLOR);
+	cv_image.image = cv::imread(name);
 	if(!cv_image.image.data)
 	{
 		ROS_WARN("Could not open: %s", name);
