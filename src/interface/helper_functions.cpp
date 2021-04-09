@@ -76,9 +76,9 @@ void readPointcloudSensorParameters(ros::NodeHandle& parent, slam3d::PointCloudS
 	
 	// Read registration config for fine alignement
 	ros::NodeHandle fine(n, "fine");
-	pcs->setFineConfiguaration(readRegistrationParameters(fine));
+	pcs->setRegistrationParameters(readRegistrationParameters(fine), false);
 	
 	// Read registration config for coarse alignement
 	ros::NodeHandle coarse(n, "coarse");
-	pcs->setCoarseConfiguaration(readRegistrationParameters(coarse));
+	pcs->setRegistrationParameters(readRegistrationParameters(coarse), true);
 }
