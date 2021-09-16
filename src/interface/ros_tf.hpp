@@ -1,6 +1,6 @@
 #include <slam3d/core/PoseSensor.hpp>
 
-#include <tf/transform_listener.h>
+#include <tf2_ros/transform_listener.h>
 
 /**
  * @class TransformSensor
@@ -14,10 +14,10 @@ class TransformSensor : public slam3d::PoseSensor
 public:
 	TransformSensor(const std::string& n, slam3d::Graph* g, slam3d::Logger* l);
 	slam3d::Transform getPose(timeval stamp);
-	void setTF(tf::TransformListener* tf, const std::string& ref, const std::string& robot);
+	void setTF(tf2_ros::Buffer* tf, const std::string& ref, const std::string& robot);
 	
 protected:
-	tf::TransformListener* mTfListener;
+	tf2_ros::Buffer* mTransformBuffer;
 	std::string mReferenceFrame;
 	std::string mRobotFrame;
 };

@@ -1,8 +1,7 @@
 #include <ros/ros.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
-#include <tf/transform_broadcaster.h>
-#include <tf_conversions/tf_eigen.h>
+#include <tf2_ros/transform_broadcaster.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <std_srvs/Empty.h>
 
@@ -29,7 +28,7 @@
 #define MAP_FRAME "map"
 #define SENSOR_FRAME "velodyne_laser"
 
-tf::TransformBroadcaster* gTransformBroadcaster;
+tf2_ros::TransformBroadcaster* gTransformBroadcaster;
 ros::Publisher* gMapPublisher;
 ros::Publisher* gSignalPublisher;
 GraphPublisher* gGraphPublisher;
@@ -50,9 +49,7 @@ void publishTransforms(const ros::Time& t)
 	{
 		ROS_ERROR("Current pose from mapper has 0 determinant!");
 	}
-
-	tf::StampedTransform robot_in_map(eigen2tf(current), t, MAP_FRAME, SENSOR_FRAME);
-	gTransformBroadcaster->sendTransform(robot_in_map);
+	gTransformBroadcaster->sendTransform(eigen2tf(current, MAP_FRAME, SENSOR_FRAME, t));
 }
 
 void publishGraph(const ros::Time& t)
@@ -119,7 +116,7 @@ int main(int argc, char **argv)
 	ros::NodeHandle pn("~/");
 	pn.param("scan_resolution", gScanResolution, 0.5);
 	pn.param("multi_threaded", gMultiThreaded, true);
-	gTransformBroadcaster = new tf::TransformBroadcaster;
+	gTransformBroadcaster = new tf2_ros::TransformBroadcaster();
 	
 	// Clock and Logger to be used by all slam3d components
 	slam3d::Clock* clock = new RosClock();

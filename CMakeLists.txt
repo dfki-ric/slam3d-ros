@@ -11,13 +11,13 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   sensor_msgs
   geometry_msgs
-  tf_conversions
+  tf2_ros
+  tf2_eigen
   visualization_msgs
   std_srvs
   laser_geometry
   cv_bridge
   interactive_markers
-  eigen_conversions
 )
 
 find_package(slam3d REQUIRED)
@@ -25,9 +25,7 @@ find_package(slam3d REQUIRED)
 ###################################
 ## catkin specific configuration ##
 ###################################
-catkin_package(
-  CATKIN_DEPENDS roscpp pcl_ros sensor_msgs geometry_msgs visualization_msgs std_srvs tf message_runtime
-)
+catkin_package()
 
 add_subdirectory(src)
 

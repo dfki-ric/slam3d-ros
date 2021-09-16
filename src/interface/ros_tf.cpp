@@ -1,6 +1,8 @@
 #include "ros_tf.hpp"
 #include "ros_common.hpp"
 
+#include <tf2_eigen/tf2_eigen.h>
+
 using namespace slam3d;
 
 TransformSensor::TransformSensor(const std::string& n, Graph* g, Logger* l)
@@ -8,34 +10,33 @@ TransformSensor::TransformSensor(const std::string& n, Graph* g, Logger* l)
 {
 	mReferenceFrame = "odometry";
 	mRobotFrame = "robot";
-	mTfListener = NULL;
+	mTransformBuffer = nullptr;
 }
 
-void TransformSensor::setTF(tf::TransformListener* tf, const std::string& ref, const std::string& robot)
+void TransformSensor::setTF(tf2_ros::Buffer* tf, const std::string& ref, const std::string& robot)
 {
-	mTfListener = tf;
+	mTransformBuffer = tf;
 	mReferenceFrame = ref;
 	mRobotFrame = robot;
 }
 
 Transform TransformSensor::getPose(timeval stamp)
 {
-	if(!mTfListener)
+	if(!mTransformBuffer)
 	{
 		ROS_ERROR("You must call setTF() before using the TransformSensor!");
 		return Transform::Identity();
 	}
 
-	tf::StampedTransform tf_transform;
+	geometry_msgs::TransformStamped transformStamped;
 	try
 	{
-		mTfListener->waitForTransform(mReferenceFrame, mRobotFrame, fromTimeval(stamp), ros::Duration(1.0));
-		mTfListener->lookupTransform(mReferenceFrame, mRobotFrame, fromTimeval(stamp), tf_transform);
+		transformStamped = mTransformBuffer->lookupTransform(mReferenceFrame, mRobotFrame, fromTimeval(stamp));
 	}catch(tf2::TransformException &e)
 	{
 		throw InvalidPose(e.what());
 	}
-	return tf2eigen(tf_transform);
+	return tf2::transformToEigen(transformStamped);
 }
 
 IMU::IMU(Graph* g, Logger* l)

@@ -1,8 +1,8 @@
 #include "LoopCloser.hpp"
 
 #include <slam3d/core/Mapper.hpp>
+#include <tf2_eigen/tf2_eigen.h>
 
-#include <eigen_conversions/eigen_msg.h>
 #include <Eigen/Geometry>
 
 using namespace slam3d;
@@ -30,14 +30,14 @@ void LoopCloser::receiveTwist(const geometry_msgs::Twist::ConstPtr& twist)
 	pose.position.z += twist->linear.z;
 	
 	Eigen::Affine3d affine;
-	tf::poseMsgToEigen(pose, affine);
+	tf2::convert(pose, affine);
 
 	Eigen::Quaterniond q = Eigen::AngleAxisd(twist->angular.x * 0.01, Eigen::Vector3d::UnitX())
 	                     * Eigen::AngleAxisd(twist->angular.y * 0.01, Eigen::Vector3d::UnitY())
                          * Eigen::AngleAxisd(twist->angular.z * 0.01, Eigen::Vector3d::UnitZ());
 	
 	affine.linear() = affine.linear() * q;
-	tf::poseEigenToMsg(affine, pose);
+	tf2::convert(affine, pose);
 	
 	mServer.setPose("loop", pose);
 	mServer.applyChanges();
@@ -88,7 +88,7 @@ void LoopCloser::initLoopClosing(const PointCloudMeasurement::Ptr& pc)
 	points.header.stamp = ros::Time::now();
 	points.action = visualization_msgs::Marker::ADD;
 
-	tf::poseEigenToMsg(sensorPose, points.pose);
+	tf2::convert(sensorPose, points.pose);
 
 	points.id = 0;
 	points.type = visualization_msgs::Marker::POINTS;
@@ -157,7 +157,7 @@ void LoopCloser::closeLoopCB(PointCloudSensor* pcs, const visualization_msgs::In
 	,feedback->pose.position.y, feedback->pose.position.z);
 	
 	Transform pose;
-	tf::poseMsgToEigen(feedback->pose, pose);
+	tf2::convert(feedback->pose, pose);
 	mMapper->getGraph()->buildNeighborIndex(mSourceCloud->getSensorName());
 	VertexObjectList neighbors = mMapper->getGraph()->getNearbyVertices(pose, 10.0);
 	

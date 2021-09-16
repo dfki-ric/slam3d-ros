@@ -1,8 +1,9 @@
 #include <ros/ros.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
-#include <tf/transform_broadcaster.h>
-#include <tf_conversions/tf_eigen.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_eigen/tf2_eigen.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <std_srvs/Empty.h>
 
@@ -25,8 +26,10 @@
 #include "ros_tf.hpp"
 #include "helper_functions.hpp"
 
-tf::TransformBroadcaster* gTransformBroadcaster;
-tf::TransformListener* gTransformListener;
+tf2_ros::TransformBroadcaster* gTransformBroadcaster;
+tf2_ros::TransformListener* gTransformListener;
+tf2_ros::Buffer gTransformBuffer;
+
 
 ros::Publisher* gMapPublisher;
 GraphPublisher* gGraphPublisher;
@@ -41,7 +44,7 @@ slam3d::G2oSolver* gSolver;
 slam3d::G2oSolver* gPatchSolver;
 slam3d::PointCloudSensor* gPclSensor;
 
-tf::StampedTransform gOdomInMap;
+geometry_msgs::TransformStamped gOdomInMap;
 Odometry* gOdometry;
 IMU* gIMU;
 //PointcloudSensorRos* gPclSensorRos;
@@ -67,17 +70,16 @@ ros::Time gLastTime;
 
 bool checkOdometry(const ros::Time& t)
 {
-	try
+/*	try
 	{
-		gTransformListener->waitForTransform(gOdometryFrame, gRobotFrame, t, ros::Duration(0.1));
-		if(!gTransformListener->canTransform(gRobotFrame, gOdometryFrame, t))
+		if(!gTransformBuffer.canTransform(gRobotFrame, gOdometryFrame, t, ros::Duration(0.1)))
 			return false;
 	}catch(tf2::TransformException &e)
 	{
 		ROS_WARN("Waiting for transform: '%s' => '%s' to become available...", gOdometryFrame.c_str(), gRobotFrame.c_str());
 		return false;
 	}
-	return true;
+*/	return true;
 }
 
 void publishTransforms(const ros::Time& t)
@@ -87,21 +89,24 @@ void publishTransforms(const ros::Time& t)
 	{
 		ROS_ERROR("Current pose from mapper has 0 determinant!");
 	}
-
-	gOdomInMap.stamp_ = t;
+	gOdomInMap.header.stamp = t;
 	gTransformBroadcaster->sendTransform(gOdomInMap);
 }
 
 void updateOdomInMap(const ros::Time& t)
 {
-	slam3d::Transform current = gMapper->getCurrentPose();
-	tf::Stamped<tf::Pose> map_in_robot(eigen2tf(current.inverse()), t, gRobotFrame);
-	tf::Stamped<tf::Pose> map_in_odom;
 	try
 	{
-		gTransformListener->waitForTransform(gRobotFrame, gOdometryFrame, t, ros::Duration(0.1));
-		gTransformListener->transformPose(gOdometryFrame, map_in_robot, map_in_odom);
-		gOdomInMap = tf::StampedTransform(map_in_odom.inverse(), t, gMapFrame, gOdometryFrame);
+		// Not working because of weird linker error.
+//		slam3d::Transform mapInOdom;
+//		gTransformBuffer.transform(mapInRobot, mapInOdom, gOdometryFrame);
+//		gOdomInMap = eigen2tf(mapInOdom, gMapFrame, gOdometryFrame, t);
+
+		slam3d::Transform robot2map = gMapper->getCurrentPose().inverse();
+		slam3d::Transform odom2robot = tf2::transformToEigen(gTransformBuffer.lookupTransform(gRobotFrame, gOdometryFrame, t));
+		slam3d::Transform odom2map = odom2robot * robot2map;
+		
+		gOdomInMap = eigen2tf(odom2map.inverse(), gMapFrame, gOdometryFrame, t);
 	}catch(tf2::TransformException &e)
 	{
 		ROS_ERROR("%s", e.what());
@@ -127,11 +132,10 @@ void receiveGPS(const sensor_msgs::NavSatFix::ConstPtr& gps)
 	gLastTime = gps->header.stamp;
 	
 	// Get the pose of the laser scanner
-	tf::StampedTransform gps_pose;
+	geometry_msgs::TransformStamped gps_pose;
 	try
 	{
-		gTransformListener->waitForTransform(gRobotFrame, gGpsFrame, gps->header.stamp, ros::Duration(0.01));
-		gTransformListener->lookupTransform(gRobotFrame, gGpsFrame, gps->header.stamp, gps_pose);
+		gps_pose = gTransformBuffer.lookupTransform(gRobotFrame, gGpsFrame, gps->header.stamp);
 	}catch(tf2::TransformException &e)
 	{
 		ROS_WARN("Could not get transform: '%s' => '%s'!", gRobotFrame.c_str(), gGpsFrame.c_str());
@@ -144,7 +148,7 @@ void receiveGPS(const sensor_msgs::NavSatFix::ConstPtr& gps)
 	Position pos = gGpsSensor->toUTM(gps->longitude, gps->latitude, gps->altitude);
 	Covariance<3> cov = Covariance<3>::Identity() * gGpsCovScale; //TODO: Read covariance from message
 	timeval t = fromRosTime(gps->header.stamp);
-	GpsMeasurement::Ptr m(new GpsMeasurement(pos, cov, t, gRobotName, gGpsName, tf2eigen(gps_pose)));
+	GpsMeasurement::Ptr m(new GpsMeasurement(pos, cov, t, gRobotName, gGpsName, tf2::transformToEigen(gps_pose)));
 //	try
 //	{
 		gGpsSensor->addMeasurement(m);
@@ -170,11 +174,10 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	}
 	gLastTime = t;
 	
-	tf::StampedTransform laser_pose;
+	geometry_msgs::TransformStamped laser_pose;
 	try
 	{
-		gTransformListener->waitForTransform(gRobotFrame, gLaserFrame, t, ros::Duration(0.1));
-		gTransformListener->lookupTransform(gRobotFrame, gLaserFrame, t, laser_pose);
+		laser_pose = gTransformBuffer.lookupTransform(gRobotFrame, gLaserFrame, t);
 	}catch(tf2::TransformException &e)
 	{
 		ROS_WARN("Could not get transform: '%s' => '%s'!", gRobotFrame.c_str(), gLaserFrame.c_str());
@@ -194,7 +197,7 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	}
 	
 	slam3d::PointCloudMeasurement::Ptr m(
-		new slam3d::PointCloudMeasurement(cloud, gRobotName, gSensorName, tf2eigen(laser_pose)));
+		new slam3d::PointCloudMeasurement(cloud, gRobotName, gSensorName, tf2::transformToEigen(laser_pose)));
 	
 	if(gPclSensor->addMeasurement(m, gOdometry->getPose(fromRosTime(t))))
 	{
@@ -264,8 +267,8 @@ int main(int argc, char **argv)
 	gCount = 0;
 	gLastTime = ros::Time(0);
 	
-	gTransformBroadcaster = new tf::TransformBroadcaster;
-	gTransformListener = new tf::TransformListener();
+	gTransformBroadcaster = new tf2_ros::TransformBroadcaster;
+	gTransformListener = new tf2_ros::TransformListener(gTransformBuffer);
 	
 	slam3d::Clock* clock = new RosClock();
 	slam3d::Logger* logger = new RosLogger();
@@ -291,11 +294,11 @@ int main(int argc, char **argv)
 	pn.param("scan_resolution", gScanResolution, 0.5);
 
 	// Apply tf-prefix to all frames
-	gRobotFrame = gTransformListener->resolve(gRobotFrame);
-	gOdometryFrame = gTransformListener->resolve(gOdometryFrame);
-	gMapFrame = gTransformListener->resolve(gMapFrame);
-	gLaserFrame = gTransformListener->resolve(gLaserFrame);
-	gGpsFrame = gTransformListener->resolve(gGpsFrame);
+//	gRobotFrame = gTransformListener->resolve(gRobotFrame);
+//	gOdometryFrame = gTransformListener->resolve(gOdometryFrame);
+//	gMapFrame = gTransformListener->resolve(gMapFrame);
+//	gLaserFrame = gTransformListener->resolve(gLaserFrame);
+//	gGpsFrame = gTransformListener->resolve(gGpsFrame);
 	
 	// Create the PointCloudSensor for the velodyne laser
 	pn.param("sensor_name", gSensorName, std::string("PointcloudSensor"));
@@ -309,14 +312,14 @@ int main(int argc, char **argv)
 
 
 	gOdometry = new Odometry(gGraph, logger);
-	gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
+	gOdometry->setTF(&gTransformBuffer, gOdometryFrame, gRobotFrame);
 	gOdometry->setCovarianceScale(n.param("odo_cov_scale", 1.0));
 	gMapper->registerPoseSensor(gOdometry);
 
 	if(gUseImu)
 	{
 		gIMU = new IMU(gGraph, logger);
-		gIMU->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
+		gIMU->setTF(&gTransformBuffer, gOdometryFrame, gRobotFrame);
 		gIMU->setCovarianceScale(pn.param("imu_cov_scale", 1.0));
 		gMapper->registerPoseSensor(gIMU);
 	}else

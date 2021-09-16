@@ -1,4 +1,5 @@
 #include "ros_common.hpp"
+#include <tf2_eigen/tf2_eigen.h>
 
 ros::Time fromTimeval(timeval tv)
 {
@@ -16,23 +17,6 @@ timeval fromRosTime(ros::Time rt)
 	return tv;
 }
 
-tf::Transform eigen2tf(Transform in)
-{
-	tf::Transform out;
-	tf::transformEigenToTF(in.cast<double>(), out);
-	return out;
-}
-
-Transform tf2eigen(tf::Transform in)
-{
-	Eigen::Affine3d out;
-	tf::transformTFToEigen(in, out);
-	Transform tf;
-	tf.linear() = out.linear();
-	tf.translation() = out.translation();
-	return tf;
-}
-
 timeval RosClock::now()
 {
 	return fromRosTime(ros::Time::now());
@@ -40,6 +24,16 @@ timeval RosClock::now()
 
 RosLogger::RosLogger():Logger(RosClock())
 {
+}
+
+geometry_msgs::TransformStamped eigen2tf(const slam3d::Transform& tf,
+	const std::string& source, const std::string& target, const ros::Time& t)
+{
+	geometry_msgs::TransformStamped result = tf2::eigenToTransform(tf);
+	result.header.stamp = t;
+	result.header.frame_id = source;
+	result.child_frame_id = target;
+	return result;
 }
 
 void RosLogger::message(LOG_LEVEL lvl, const std::string& message)
