@@ -26,20 +26,34 @@ find_package(slam3d REQUIRED)
 ## catkin specific configuration ##
 ###################################
 catkin_package(
-  CATKIN_DEPENDS roscpp pcl_ros sensor_msgs geometry_msgs visualization_msgs std_srvs tf message_runtime
-)
-
-add_subdirectory(src)
-
-# Export the library interface
-install(EXPORT slam3d_ros-targets
-	NAMESPACE slam3d_ros::
-	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/cmake
+  INCLUDE_DIRS
+    include
+  LIBRARIES
+    slam3d_ros_interface
+	slam3d_ros_visualization
+  CATKIN_DEPENDS
+    roscpp
+	pcl_ros
+	sensor_msgs
+	geometry_msgs
+	visualization_msgs
+	std_srvs
+	tf
+	message_runtime
+  DEPENDS
+    slam3d
 )
 
 ###########
 ## Build ##
 ###########
+include_directories(
+  ${catkin_INCLUDE_DIRS}
+  include/slam3d_ros/visualization
+  include/slam3d_ros/interface
+)
+
+add_subdirectory(src)
 
 # 3D-Mapper
 add_executable(mapper_node
@@ -53,8 +67,8 @@ target_link_libraries(mapper_node PUBLIC
   slam3d::sensor-pcl
   slam3d::sensor-gdal
   slam3d::solver-g2o
-  visualization
-  interface
+  slam3d_ros_visualization
+  slam3d_ros_interface
   ${catkin_LIBRARIES}
 )
 
@@ -67,8 +81,8 @@ target_link_libraries(mapper2d_node PUBLIC
   slam3d::sensor-pcl
   slam3d::sensor-pointmatcher
   slam3d::solver-g2o
-  visualization
-  interface
+  slam3d_ros_visualization
+  slam3d_ros_interface
   ${catkin_LIBRARIES}
 )
 
@@ -88,8 +102,8 @@ target_link_libraries(kitti_mapper PUBLIC
   slam3d::graph-boost
   slam3d::sensor-pcl
   slam3d::solver-g2o
-  visualization
-  interface
+  slam3d_ros_visualization
+  slam3d_ros_interface
   ${catkin_LIBRARIES}
 )
 
