@@ -95,23 +95,23 @@
     <File Name="src/kitti_publisher.cpp"/>
     <File Name="src/mapper2d_node.cpp"/>
     <VirtualDirectory Name="visualization">
+      <File Name="include/slam3d_ros/visualization/LoopCloser.hpp"/>
+      <File Name="include/slam3d_ros/visualization/GraphPublisher.hpp"/>
+      <File Name="include/slam3d_ros/visualization/GpsPublisher.hpp"/>
       <File Name="src/visualization/CMakeLists.txt"/>
       <File Name="src/visualization/GpsPublisher.cpp"/>
-      <File Name="src/visualization/GpsPublisher.hpp"/>
       <File Name="src/visualization/GraphPublisher.cpp"/>
-      <File Name="src/visualization/GraphPublisher.hpp"/>
       <File Name="src/visualization/LoopCloser.cpp"/>
-      <File Name="src/visualization/LoopCloser.hpp"/>
     </VirtualDirectory>
     <File Name="src/CMakeLists.txt"/>
     <VirtualDirectory Name="interface">
+      <File Name="include/slam3d_ros/interface/ros_tf.hpp"/>
+      <File Name="include/slam3d_ros/interface/ros_common.hpp"/>
+      <File Name="include/slam3d_ros/interface/helper_functions.hpp"/>
       <File Name="src/interface/CMakeLists.txt"/>
       <File Name="src/interface/ros_common.cpp"/>
-      <File Name="src/interface/ros_common.hpp"/>
       <File Name="src/interface/ros_tf.cpp"/>
-      <File Name="src/interface/ros_tf.hpp"/>
       <File Name="src/interface/helper_functions.cpp"/>
-      <File Name="src/interface/helper_functions.hpp"/>
     </VirtualDirectory>
     <File Name="src/kitti_mapper.cpp"/>
   </VirtualDirectory>
