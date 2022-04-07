@@ -11,6 +11,7 @@
 #include <slam3d/core/Mapper.hpp>
 #include <slam3d/graph/boost/BoostGraph.hpp>
 #include <slam3d/sensor/gdal/GpsSensor.hpp>
+#include <slam3d/sensor/gdal/CoordTransformer.hpp>
 #include <slam3d/solver/g2o/G2oSolver.hpp>
 
 #include <iostream>
@@ -40,6 +41,7 @@ slam3d::GpsSensor* gGpsSensor;
 slam3d::G2oSolver* gSolver;
 slam3d::G2oSolver* gPatchSolver;
 slam3d::PointCloudSensor* gPclSensor;
+slam3d::CoordTransformer* gCoordTransformer;
 
 tf::StampedTransform gOdomInMap;
 Odometry* gOdometry;
@@ -141,7 +143,7 @@ void receiveGPS(const sensor_msgs::NavSatFix::ConstPtr& gps)
 	if(!checkOdometry(gps->header.stamp))
 		return;
 	
-	Position pos = gGpsSensor->toUTM(gps->longitude, gps->latitude, gps->altitude);
+	Position pos = gCoordTransformer->toUTM(gps->longitude, gps->latitude, gps->altitude);
 	Covariance<3> cov = Covariance<3>::Identity() * gGpsCovScale; //TODO: Read covariance from message
 	timeval t = fromRosTime(gps->header.stamp);
 	GpsMeasurement::Ptr m(new GpsMeasurement(pos, cov, t, gRobotName, gGpsName, tf2eigen(gps_pose)));
@@ -335,10 +337,12 @@ int main(int argc, char **argv)
 	// Create GpsSensor
 	if(gUseGps)
 	{
+		gCoordTransformer = new slam3d::CoordTransformer();
+		gCoordTransformer->init();
+		
 		pn.param("gps_name", gGpsName, std::string("GpsSensor"));
 		pn.param("gps_cov_scale", gGpsCovScale, 1.0);
 		gGpsSensor = new slam3d::GpsSensor(gGpsName, logger);
-		gGpsSensor->initCoordTransform();
 		readSensorParameters(pn, gGpsSensor);
 		gMapper->registerSensor(gGpsSensor);
 		gpsSub = n.subscribe<sensor_msgs::NavSatFix>("gps", 10, &receiveGPS);
@@ -368,6 +372,7 @@ int main(int argc, char **argv)
 	
 	ros::spin();
 	
+	delete gCoordTransformer;
 	delete gGraph;
 	delete gGraphPublisher;
 	delete gGpsPublisher;
