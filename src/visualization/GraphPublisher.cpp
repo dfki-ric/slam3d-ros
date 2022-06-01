@@ -207,13 +207,14 @@ void GraphPublisher::publishPoseEdges(const std::string& sensor, const ros::Time
 		if(edge->constraint->getType() != POSITION)
 			continue;
 
+		PositionConstraint::Ptr pos = boost::dynamic_pointer_cast<PositionConstraint>(edge->constraint);
+
 		const VertexObject& source_obj = mGraph->getVertex(edge->source);
-		Transform::ConstTranslationPart source_pose = source_obj.corrected_pose.translation();
+		Transform::ConstTranslationPart source_pose = (source_obj.corrected_pose * pos->getSensorPose()).translation();
 		marker.points[2*i].x = source_pose[0];
 		marker.points[2*i].y = source_pose[1];
 		marker.points[2*i].z = source_pose[2];
 
-		PositionConstraint::Ptr pos = boost::dynamic_pointer_cast<PositionConstraint>(edge->constraint);
 		Position target_pose = pos->getPosition();
 		marker.points[2*i+1].x = target_pose[0];
 		marker.points[2*i+1].y = target_pose[1];
