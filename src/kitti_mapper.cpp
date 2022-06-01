@@ -42,6 +42,7 @@ slam3d::G2oSolver* gPatchSolver;
 
 double gScanResolution;
 bool gMultiThreaded;
+unsigned gOptimizationRate;
 
 void publishTransforms(const ros::Time& t)
 {
@@ -83,6 +84,10 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	
 	if(gPclSensor->addMeasurement(m))
 	{
+		if(gGraph->getNumOfNewConstraints() >= gOptimizationRate)
+		{
+			gGraph->optimize();
+		}
 		publishTransforms(t);
 		publishGraph(t);
 		gPclSensor->linkLastToNeighbors(gMultiThreaded);
@@ -136,8 +141,9 @@ int main(int argc, char **argv)
 	gMapper = new slam3d::Mapper(gGraph, logger);
 
 	// Create the Backend for global graph optimization
+	gOptimizationRate = pn.param("optimization_rate", 10);
 	gSolver = new slam3d::G2oSolver(logger);
-	gGraph->setSolver(gSolver, pn.param("optimization_rate", 10));
+	gGraph->setSolver(gSolver);
 	
 	// Create the PointCloudSensor for the velodyne laser
 	gPclSensor = new slam3d::PointCloudSensor(SENSOR_NAME, logger);

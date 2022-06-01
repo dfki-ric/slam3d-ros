@@ -49,6 +49,7 @@ IMU* gIMU;
 //PointcloudSensorRos* gPclSensorRos;
 
 int gCount;
+int gOptimizationRate;
 double gScanResolution;
 double gGpsCovScale;
 
@@ -200,6 +201,10 @@ void receivePointCloud(const slam3d::PointCloud::ConstPtr& pcl)
 	
 	if(gPclSensor->addMeasurement(m, gOdometry->getPose(fromRosTime(t))))
 	{
+		if(gGraph->getNumOfNewConstraints() >= gOptimizationRate)
+		{
+			gGraph->optimize();
+		}
 		updateOdomInMap(t);
 		publishTransforms(t);
 		publishGraph(t);
@@ -276,9 +281,8 @@ int main(int argc, char **argv)
 	gMapper = new slam3d::Mapper(gGraph, logger);
 	gSolver = new slam3d::G2oSolver(logger);
 
-	int rate;
-	pn.param("optimization_rate", rate, 10);
-	gGraph->setSolver(gSolver, rate);
+	pn.param("optimization_rate", gOptimizationRate, 10);
+	gGraph->setSolver(gSolver);
 	
 	pn.param("robot_name", gRobotName, std::string("Robot"));
 	pn.param("odometry_frame", gOdometryFrame, std::string("odometry"));
