@@ -6,7 +6,7 @@ using namespace slam3d;
 TransformSensor::TransformSensor(const std::string& n, Graph* g, Logger* l)
 : PoseSensor(n, g, l)
 {
-	mReferenceFrame = "odometry";
+	mReferenceFrame = "TfOdometry";
 	mRobotFrame = "robot";
 	mTfListener = NULL;
 }
@@ -38,13 +38,13 @@ Transform TransformSensor::getPose(timeval stamp)
 	return tf2eigen(tf_transform);
 }
 
-IMU::IMU(Graph* g, Logger* l)
-: TransformSensor("IMU", g, l)
+TfImu::TfImu(Graph* g, Logger* l)
+: TransformSensor("TfImu", g, l)
 {
 	mGravityReference = Eigen::Vector3d::UnitZ();
 }
 
-void IMU::handleNewVertex(IdType vertex)
+void TfImu::handleNewVertex(IdType vertex)
 {
 	timeval stamp = mGraph->getVertex(vertex).measurement->getTimestamp();
 	Transform currentPose = getPose(stamp);
@@ -56,14 +56,14 @@ void IMU::handleNewVertex(IdType vertex)
 	mGraph->addConstraint(vertex, 0, grav);
 }
 
-Odometry::Odometry(Graph* g, Logger* l)
-: TransformSensor("Odometry", g, l)
+TfOdometry::TfOdometry(Graph* g, Logger* l)
+: TransformSensor("TfOdometry", g, l)
 {
 	mLastVertex = 0;
 	mLastOdometricPose = Transform::Identity();
 }
 
-void Odometry::handleNewVertex(IdType vertex)
+void TfOdometry::handleNewVertex(IdType vertex)
 {
 	timeval stamp = mGraph->getVertex(vertex).measurement->getTimestamp();
 	Transform currentPose = getPose(stamp);

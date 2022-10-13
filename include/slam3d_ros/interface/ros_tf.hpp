@@ -29,10 +29,10 @@ protected:
  * @file ros_tf.hpp
  * @brief Sensor that creates gravity constraints from an IMU's roll-pitch-angle.
  */
-class IMU : public TransformSensor
+class TfImu : public TransformSensor
 {
 public:
-	IMU(slam3d::Graph* g, slam3d::Logger* l);
+	TfImu(slam3d::Graph* g, slam3d::Logger* l);
 	void handleNewVertex(slam3d::IdType vertex);
 	
 private:
@@ -46,10 +46,10 @@ private:
  * @file ros_tf.hpp
  * @brief Sensor that creates SE(3) constraints between adjacent measurements.
  */
-class Odometry : public TransformSensor
+class TfOdometry : public TransformSensor
 {
 public:
-	Odometry(slam3d::Graph* g, slam3d::Logger* l);
+	TfOdometry(slam3d::Graph* g, slam3d::Logger* l);
 	void handleNewVertex(slam3d::IdType vertex);
 	
 private:

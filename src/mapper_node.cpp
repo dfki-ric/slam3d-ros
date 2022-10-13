@@ -44,8 +44,8 @@ slam3d::PointCloudSensor* gPclSensor;
 slam3d::CoordTransformer* gCoordTransformer;
 
 tf::StampedTransform gOdomInMap;
-Odometry* gOdometry;
-IMU* gIMU;
+TfOdometry* gOdometry;
+TfImu* gIMU;
 //PointcloudSensorRos* gPclSensorRos;
 
 int gCount;
@@ -314,14 +314,14 @@ int main(int argc, char **argv)
 	gPclSensor->setPatchSolver(gPatchSolver);
 
 
-	gOdometry = new Odometry(gGraph, logger);
+	gOdometry = new TfOdometry(gGraph, logger);
 	gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
 	gOdometry->setCovarianceScale(n.param("odo_cov_scale", 1.0));
 	gMapper->registerPoseSensor(gOdometry);
 
 	if(gUseImu)
 	{
-		gIMU = new IMU(gGraph, logger);
+		gIMU = new TfImu(gGraph, logger);
 		gIMU->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
 		gIMU->setCovarianceScale(pn.param("imu_cov_scale", 1.0));
 		gMapper->registerPoseSensor(gIMU);

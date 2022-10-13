@@ -54,7 +54,7 @@ double gMapOutlierRadius;
 int gMapOutlierNeighbors;
 
 slam3d::Transform gSensorPose;
-Odometry* gOdometry;
+TfOdometry* gOdometry;
 tf::StampedTransform gOdomInMap;
 
 typedef slam3d::PM::DataPoints::Label Label;
@@ -300,7 +300,7 @@ int main(int argc, char **argv)
 	gGraph->fixNext();
 
 	// Create the Odometry
-	gOdometry = new Odometry(gGraph, gLogger);
+	gOdometry = new TfOdometry(gGraph, gLogger);
 	gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
 	gMapper->registerPoseSensor(gOdometry);
 
