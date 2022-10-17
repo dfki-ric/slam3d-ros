@@ -45,7 +45,7 @@ slam3d::CoordTransformer* gCoordTransformer;
 
 tf::StampedTransform gOdomInMap;
 TfOdometry* gOdometry;
-TfImu* gIMU;
+slam3d::PoseSensor* gIMU;
 //PointcloudSensorRos* gPclSensorRos;
 
 int gCount;
@@ -53,7 +53,7 @@ int gOptimizationRate;
 double gScanResolution;
 double gGpsCovScale;
 
-bool gUseImu;
+int gUseImu;
 bool gUseGps;
 
 std::string gRobotName;
@@ -291,7 +291,7 @@ int main(int argc, char **argv)
 	pn.param("laser_frame", gLaserFrame, std::string("laser"));
 	pn.param("gps_frame", gGpsFrame, std::string("gps"));
 
-	pn.param("use_imu", gUseImu, false);
+	pn.param("use_imu", gUseImu, 0);
 	pn.param("use_gps", gUseGps, false);
 
 	pn.param("scan_resolution", gScanResolution, 0.5);
@@ -319,15 +319,22 @@ int main(int argc, char **argv)
 	gOdometry->setCovarianceScale(n.param("odo_cov_scale", 1.0));
 	gMapper->registerPoseSensor(gOdometry);
 
-	if(gUseImu)
+	TfImu* tfImu = nullptr;
+	switch(gUseImu)
 	{
-		gIMU = new TfImu(gGraph, logger);
-		gIMU->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
-		gIMU->setCovarianceScale(pn.param("imu_cov_scale", 1.0));
+	case 1:
+		tfImu = new TfImu(gGraph, logger);
+		tfImu->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
+		tfImu->setCovarianceScale(pn.param("imu_cov_scale", 1.0));
+		gMapper->registerPoseSensor(tfImu);
+		gIMU = tfImu;
+		break;
+	case 2:
+		gIMU = new Imu("IMU", gGraph, logger);
 		gMapper->registerPoseSensor(gIMU);
-	}else
-	{
-		gIMU = NULL;
+		break;
+	default:
+		gIMU = nullptr;
 	}
 
 	// Subscribe to topics

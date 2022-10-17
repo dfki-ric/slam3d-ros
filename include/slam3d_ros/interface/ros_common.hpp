@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
+#include <sensor_msgs/Imu.h>
 
 #include <slam3d/core/Logger.hpp>
 #include <slam3d/core/Clock.hpp>
@@ -29,6 +30,19 @@ class RosLogger : public Logger
 public:
 	RosLogger();
 	virtual void message(LOG_LEVEL lvl, const std::string& message);
+};
+
+class Imu : public PoseSensor
+{
+public:
+	Imu(const std::string& n, Graph* g, Logger* l);
+	Transform getPose(timeval stamp);
+	void handleNewVertex(IdType vertex);
+	void update(const sensor_msgs::Imu::ConstPtr& imu);
+
+protected:
+	Direction mGravityReference;
+	sensor_msgs::Imu mMeasurement; 
 };
 
 #endif
