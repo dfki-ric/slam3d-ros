@@ -68,7 +68,7 @@ Imu::Imu(const std::string& n, Graph* g, Logger* l)
 : PoseSensor(n, g, l)
 {
 	ros::NodeHandle node;
-	node.subscribe<sensor_msgs::Imu>("imu", 1, &Imu::update, this);
+	mSubscriber = node.subscribe<sensor_msgs::Imu>("imu", 1, &Imu::update, this);
 }
 
 void Imu::update(const sensor_msgs::Imu::ConstPtr& imu)
@@ -76,23 +76,48 @@ void Imu::update(const sensor_msgs::Imu::ConstPtr& imu)
 	mMeasurement = *imu;
 }
 
+Quaternion Imu::getOrientation(timeval stamp)
+{
+	return Quaternion(mMeasurement.orientation.w,
+	                  mMeasurement.orientation.x,
+	                  mMeasurement.orientation.y,
+	                  mMeasurement.orientation.z);
+}
+
 Transform Imu::getPose(timeval stamp)
 {
-	Eigen::Quaterniond quat(mMeasurement.orientation.w,
-	                        mMeasurement.orientation.x,
-	                        mMeasurement.orientation.y,
-	                        mMeasurement.orientation.z);
-	return Transform(quat);
+	return Transform(getOrientation(stamp));
+}
+
+Covariance<3> Imu::getCovariance(timeval stamp)
+{
+/*
+	Covariance<3> cov;
+	cov(0,0) = mMeasurement.orientation_covariance[0];
+	cov(0,1) = mMeasurement.orientation_covariance[1];
+	cov(0,2) = mMeasurement.orientation_covariance[2];
+	cov(1,0) = mMeasurement.orientation_covariance[3];
+	cov(1,1) = mMeasurement.orientation_covariance[4];
+	cov(1,2) = mMeasurement.orientation_covariance[5];
+	cov(2,0) = mMeasurement.orientation_covariance[6];
+	cov(2,1) = mMeasurement.orientation_covariance[7];
+	cov(2,2) = mMeasurement.orientation_covariance[8];
+	return cov * mCovarianceScale;
+*/
+	return Covariance<3>::Identity();
 }
 
 void Imu::handleNewVertex(IdType vertex)
 {
 	timeval stamp = mGraph->getVertex(vertex).measurement->getTimestamp();
-	Transform currentPose = getPose(stamp);
-	
-	// Add a gravity vector to this vertex
-	Eigen::Quaterniond state(currentPose.rotation());
-	Direction upVector = state.inverse() * Eigen::Vector3d::UnitZ();
-	GravityConstraint::Ptr grav(new GravityConstraint(mName, upVector, mGravityReference, Covariance<2>::Identity() * mCovarianceScale));
-	mGraph->addConstraint(vertex, 0, grav);
+	ros::Duration diff = mMeasurement.header.stamp - fromTimeval(stamp);
+	if(abs(diff.toSec()) > 1.0)
+		throw InvalidPose("Timestamps do not match.");
+	OrientationConstraint::Ptr ori(new OrientationConstraint(
+		mName,
+		getOrientation(stamp),
+		getCovariance(stamp),
+		Transform::Identity())); 
+
+	mGraph->addConstraint(vertex, 0, ori);
 }

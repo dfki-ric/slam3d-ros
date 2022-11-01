@@ -65,6 +65,7 @@ std::string gRobotFrame;
 std::string gMapFrame;
 std::string gLaserFrame;
 std::string gGpsFrame;
+std::string gImuFrame;
 
 ros::Time gLastTime;
 
@@ -129,7 +130,7 @@ void receiveGPS(const sensor_msgs::NavSatFix::ConstPtr& gps)
 	}
 	gLastTime = gps->header.stamp;
 	
-	// Get the pose of the laser scanner
+	// Get the pose of the gps receiver
 	tf::StampedTransform gps_pose;
 	try
 	{
@@ -290,6 +291,7 @@ int main(int argc, char **argv)
 	pn.param("map_frame", gMapFrame, std::string("map"));
 	pn.param("laser_frame", gLaserFrame, std::string("laser"));
 	pn.param("gps_frame", gGpsFrame, std::string("gps"));
+	pn.param("imu_frame", gImuFrame, std::string("imu"));
 
 	pn.param("use_imu", gUseImu, 0);
 	pn.param("use_gps", gUseGps, false);
@@ -359,7 +361,7 @@ int main(int argc, char **argv)
 		gpsSub = n.subscribe<sensor_msgs::NavSatFix>("gps", 10, &receiveGPS);
 	}else
 	{
-		gGraph->fixNext();
+//		gGraph->fixNext();
 	}
 
 	ros::ServiceServer loopSrv = n.advertiseService("close_loop", &close_loop);

@@ -36,13 +36,15 @@ class Imu : public PoseSensor
 {
 public:
 	Imu(const std::string& n, Graph* g, Logger* l);
+	Quaternion getOrientation(timeval stamp);
 	Transform getPose(timeval stamp);
+	Covariance<3> getCovariance(timeval stamp);
 	void handleNewVertex(IdType vertex);
 	void update(const sensor_msgs::Imu::ConstPtr& imu);
 
 protected:
-	Direction mGravityReference;
-	sensor_msgs::Imu mMeasurement; 
+	sensor_msgs::Imu mMeasurement;
+	ros::Subscriber mSubscriber;
 };
 
 #endif
