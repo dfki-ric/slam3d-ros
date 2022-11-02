@@ -91,7 +91,6 @@ Transform Imu::getPose(timeval stamp)
 
 Covariance<3> Imu::getCovariance(timeval stamp)
 {
-/*
 	Covariance<3> cov;
 	cov(0,0) = mMeasurement.orientation_covariance[0];
 	cov(0,1) = mMeasurement.orientation_covariance[1];
@@ -103,21 +102,22 @@ Covariance<3> Imu::getCovariance(timeval stamp)
 	cov(2,1) = mMeasurement.orientation_covariance[7];
 	cov(2,2) = mMeasurement.orientation_covariance[8];
 	return cov * mCovarianceScale;
-*/
-	return Covariance<3>::Identity();
 }
 
 void Imu::handleNewVertex(IdType vertex)
 {
 	timeval stamp = mGraph->getVertex(vertex).measurement->getTimestamp();
-	ros::Duration diff = mMeasurement.header.stamp - fromTimeval(stamp);
-	if(abs(diff.toSec()) > 1.0)
-		throw InvalidPose("Timestamps do not match.");
-	OrientationConstraint::Ptr ori(new OrientationConstraint(
-		mName,
-		getOrientation(stamp),
-		getCovariance(stamp),
-		Transform::Identity())); 
-
-	mGraph->addConstraint(vertex, 0, ori);
+	Transform currentPose = getPose(stamp);
+	
+	if(mLastVertex > 0)
+	{
+		Transform t = mLastImuPose.inverse() * currentPose;
+		Covariance<6> i = Covariance<6>::Zero();
+		i.block<3,3>(3,3) = getCovariance(stamp).inverse();
+		SE3Constraint::Ptr se3(new SE3Constraint(mName, t, i));
+		mGraph->addConstraint(mLastVertex, vertex, se3);
+	}
+	
+	mLastVertex = vertex;
+	mLastImuPose = currentPose;
 }

@@ -361,7 +361,7 @@ int main(int argc, char **argv)
 		gpsSub = n.subscribe<sensor_msgs::NavSatFix>("gps", 10, &receiveGPS);
 	}else
 	{
-//		gGraph->fixNext();
+		gGraph->fixNext();
 	}
 
 	ros::ServiceServer loopSrv = n.advertiseService("close_loop", &close_loop);

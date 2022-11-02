@@ -45,6 +45,9 @@ public:
 protected:
 	sensor_msgs::Imu mMeasurement;
 	ros::Subscriber mSubscriber;
+
+	slam3d::Transform mLastImuPose;
+	slam3d::IdType mLastVertex;
 };
 
 #endif
