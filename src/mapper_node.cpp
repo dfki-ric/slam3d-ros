@@ -318,7 +318,7 @@ int main(int argc, char **argv)
 
 	gOdometry = new TfOdometry(gGraph, logger);
 	gOdometry->setTF(gTransformListener, gOdometryFrame, gRobotFrame);
-	gOdometry->setCovarianceScale(n.param("odo_cov_scale", 1.0));
+	gOdometry->setCovarianceScale(pn.param("odo_cov_scale", 1.0));
 	gMapper->registerPoseSensor(gOdometry);
 
 	TfImu* tfImu = nullptr;
