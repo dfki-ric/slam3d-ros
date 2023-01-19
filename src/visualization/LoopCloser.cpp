@@ -158,7 +158,9 @@ void LoopCloser::closeLoopCB(PointCloudSensor* pcs, const visualization_msgs::In
 	
 	Transform pose;
 	tf::poseMsgToEigen(feedback->pose, pose);
-	mMapper->getGraph()->buildNeighborIndex(mSourceCloud->getSensorName());
+	std::set<std::string> sensors;
+	sensors.insert(mSourceCloud->getSensorName());
+	mMapper->getGraph()->buildNeighborIndex(sensors);
 	VertexObjectList neighbors = mMapper->getGraph()->getNearbyVertices(pose, 10.0);
 	
 	if(neighbors.size() > 0)

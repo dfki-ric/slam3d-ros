@@ -155,7 +155,7 @@ void GraphPublisher::publishEdges(const std::string& sensor, const ros::Time& st
 		
 		SE3Constraint::Ptr se3 = boost::dynamic_pointer_cast<SE3Constraint>(edge->constraint);
 		Transform diff_inv = target_obj.corrected_pose.inverse() * source_obj.corrected_pose;
-		Transform error = diff_inv * se3->getRelativePose().transform;
+		Transform error = diff_inv * se3->getRelativePose();
 		
 		Transform::TranslationPart trans = error.translation();
 		Eigen::AngleAxisd aa;

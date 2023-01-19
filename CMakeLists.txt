@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_conversions
 )
 
-find_package(slam3d REQUIRED)
+find_package(slam3d 2.5 REQUIRED)
 
 ###################################
 ## catkin specific configuration ##

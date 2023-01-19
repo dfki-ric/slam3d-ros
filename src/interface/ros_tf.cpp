@@ -75,12 +75,9 @@ void TfOdometry::handleNewVertex(IdType vertex)
 //		ScalarType trans = t.translation().norm();
 //		ScalarType error = 1.0 + rot + trans; // magic
 
-		TransformWithCovariance twc;
-		twc.transform = t;
-		twc.covariance = Covariance<6>::Identity() * mCovarianceScale;
-		SE3Constraint::Ptr se3(new SE3Constraint(mName, twc));
+		SE3Constraint::Ptr se3(new SE3Constraint(mName, t, Covariance<6>::Identity() * mCovarianceScale));
 		mGraph->addConstraint(mLastVertex, vertex, se3);
-		mGraph->setCorrectedPose(vertex, mGraph->getVertex(mLastVertex).corrected_pose * twc.transform);
+		mGraph->setCorrectedPose(vertex, mGraph->getVertex(mLastVertex).corrected_pose * t);
 	}
 	
 	mLastVertex = vertex;
